@@ -1,0 +1,19 @@
+name: jengo-knowledge-public
+layer: knowledge
+tier: public
+version: 1.0.0
+description: Shareable knowledge patterns and published learnings
+
+permissions:
+  read: []
+  write: [self]
+  execute: []
+
+dependencies:
+  required: []
+  optional: []
+
+scope: |
+  Contains Jengo's published knowledge: patterns, learnings, and insights
+  that are safe and useful to share publicly. Equivalent to the
+  jengo-knowledge-commons concept — community-facing knowledge.
