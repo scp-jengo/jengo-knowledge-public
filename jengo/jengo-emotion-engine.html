@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>JENGO — Emotion Engine Module</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0f;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    padding: 40px 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .page-header { border-bottom: 1px solid #2a2a3a; padding-bottom: 24px; margin-bottom: 40px; }
+  .system-label { font-size: 9px; letter-spacing: 5px; color: #444; text-transform: uppercase; margin-bottom: 8px; }
+  .page-title { font-size: 28px; color: #e0e0e0; font-weight: normal; margin-bottom: 6px; letter-spacing: 1px; }
+  .page-subtitle { font-size: 12px; color: #666; letter-spacing: 2px; }
+  .page-meta { margin-top: 16px; display: flex; gap: 32px; font-size: 10px; color: #555; }
+  .page-meta span { color: #888; }
+
+  /* Section */
+  .section { margin-bottom: 52px; }
+  .section-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+  .section-id { font-size: 9px; letter-spacing: 3px; color: #444; text-transform: uppercase; }
+  .section-title { font-size: 14px; color: #c0b0e0; letter-spacing: 1px; }
+  .section-divider { flex: 1; height: 1px; background: #1a1a2a; }
+
+  p { font-size: 12px; color: #888; margin-bottom: 12px; line-height: 1.7; font-family: Georgia, serif; }
+
+  /* SOLFBMQ Stack */
+  .stack { display: flex; flex-direction: column; gap: 3px; max-width: 560px; }
+  .stack-layer { display: flex; align-items: center; gap: 0; border-radius: 2px; overflow: hidden; }
+  .stack-letter { width: 36px; min-width: 36px; text-align: center; font-size: 14px; font-weight: bold; padding: 10px 0; }
+  .stack-name { flex: 1; padding: 10px 16px; font-size: 11px; letter-spacing: 1px; }
+  .stack-note { padding: 10px 14px; font-size: 10px; color: #666; text-align: right; min-width: 180px; }
+  .stack-layer.s { background: #111120; } .stack-layer.s .stack-letter { background: #1a1a35; color: #6688cc; }
+  .stack-layer.o { background: #111120; } .stack-layer.o .stack-letter { background: #1a2535; color: #5599bb; }
+  .stack-layer.l { background: #111120; } .stack-layer.l .stack-letter { background: #112520; color: #44aa88; }
+  .stack-layer.f { background: #111120; } .stack-layer.f .stack-letter { background: #251520; color: #cc5577; }
+  .stack-layer.b { background: #111120; } .stack-layer.b .stack-letter { background: #252010; color: #cc9944; }
+  .stack-layer.m { background: #111120; } .stack-layer.m .stack-letter { background: #201025; color: #9944cc; }
+  .stack-layer.q { background: #0e0e1e; border: 1px solid #2a2a4a; }
+  .stack-layer.q .stack-letter { background: #1a1a3a; color: #8866ff; }
+  .stack-layer.emotion { background: #0f1520; border: 2px solid #c8a84b; }
+  .stack-layer.emotion .stack-letter { background: #1a2010; color: #c8a84b; font-size: 10px; padding: 10px 4px; }
+  .stack-arrow { text-align: center; color: #333; font-size: 10px; padding: 2px 0; }
+  .stack-inject { font-size: 9px; color: #c8a84b; text-align: right; padding-right: 8px; }
+
+  /* Vector grid */
+  .vector-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+  .emotion-card { background: #0e0e18; border: 1px solid #1e1e2e; border-radius: 3px; padding: 14px 12px; position: relative; overflow: hidden; }
+  .emotion-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .emotion-card.joy::before { background: #F5C518; }
+  .emotion-card.trust::before { background: #43A047; }
+  .emotion-card.fear::before { background: #AEEA00; }
+  .emotion-card.surprise::before { background: #00BCD4; }
+  .emotion-card.sadness::before { background: #1565C0; }
+  .emotion-card.disgust::before { background: #8E24AA; }
+  .emotion-card.anger::before { background: #E53935; }
+  .emotion-card.anticipation::before { background: #FB8C00; }
+  .emotion-name { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #666; margin-bottom: 8px; }
+  .emotion-nl { font-size: 11px; color: #aaa; margin-bottom: 10px; font-family: Georgia, serif; }
+  .intensity-row { display: flex; gap: 4px; align-items: center; margin-bottom: 5px; }
+  .intensity-label { font-size: 9px; color: #444; width: 44px; }
+  .intensity-bar { flex: 1; height: 6px; background: #1a1a2a; border-radius: 1px; overflow: hidden; }
+  .intensity-fill { height: 100%; border-radius: 1px; opacity: 0.7; }
+  .joy .intensity-fill { background: #F5C518; }
+  .trust .intensity-fill { background: #43A047; }
+  .fear .intensity-fill { background: #AEEA00; }
+  .surprise .intensity-fill { background: #00BCD4; }
+  .sadness .intensity-fill { background: #1565C0; }
+  .disgust .intensity-fill { background: #8E24AA; }
+  .anger .intensity-fill { background: #E53935; }
+  .anticipation .intensity-fill { background: #FB8C00; }
+  .intensity-val { font-size: 9px; color: #555; width: 28px; text-align: right; }
+
+  /* Blend matrix */
+  .blend-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .blend-card { background: #0e0e18; border: 1px solid #1e1e2e; border-radius: 3px; padding: 12px; }
+  .blend-name { font-size: 10px; color: #c8a84b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .blend-nl { font-size: 11px; color: #bbb; margin-bottom: 8px; font-family: Georgia, serif; }
+  .blend-formula { font-size: 10px; color: #555; }
+  .blend-formula .plus { color: #333; margin: 0 4px; }
+  .blend-formula .ea { padding: 2px 5px; border-radius: 2px; font-size: 9px; }
+  .ea-joy { background: #F5C51822; color: #F5C518; }
+  .ea-trust { background: #43A04722; color: #43A047; }
+  .ea-fear { background: #AEEA0022; color: #AEEA00; }
+  .ea-surprise { background: #00BCD422; color: #00BCD4; }
+  .ea-sadness { background: #1565C022; color: #4488ff; }
+  .ea-disgust { background: #8E24AA22; color: #bb55ee; }
+  .ea-anger { background: #E5393522; color: #E53935; }
+  .ea-anticipation { background: #FB8C0022; color: #FB8C00; }
+
+  /* Code block */
+  .code-block { background: #080810; border: 1px solid #1a1a2a; border-radius: 3px; padding: 20px 24px; margin-bottom: 16px; overflow-x: auto; }
+  .code-label { font-size: 9px; letter-spacing: 3px; color: #444; text-transform: uppercase; margin-bottom: 12px; }
+  .code-block pre { font-size: 11px; line-height: 1.8; color: #c0c0d0; }
+  .kw { color: #8866ff; }
+  .cls { color: #66aaff; }
+  .fn { color: #66ddaa; }
+  .st { color: #ffaa55; }
+  .cm { color: #444; font-style: italic; }
+  .num { color: #ff8866; }
+  .key { color: #c8a84b; }
+
+  /* Ouroboros diagram */
+  .ouroboros-flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+  .flow-box { background: #0e0e18; border: 1px solid #1e1e2e; border-radius: 3px; padding: 12px 16px; font-size: 11px; color: #aaa; text-align: center; min-width: 120px; }
+  .flow-box.active { border-color: #c8a84b; color: #c8a84b; }
+  .flow-box.delta { border-color: #8866ff; color: #8866ff; }
+  .flow-arrow { color: #333; font-size: 16px; padding: 0 8px; }
+  .flow-arrow.loop { color: #8866ff; }
+  .flow-label { font-size: 9px; color: #555; margin-top: 4px; letter-spacing: 1px; }
+
+  /* Testcase */
+  .testcase { background: #080810; border: 1px solid #1a1a2a; border-radius: 3px; padding: 24px; }
+  .testcase-input { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .tc-emotion { background: #0e0e18; border-radius: 3px; padding: 12px; text-align: center; }
+  .tc-name { font-size: 9px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin-bottom: 6px; }
+  .tc-bar-wrap { height: 60px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 6px; }
+  .tc-bar { width: 28px; border-radius: 2px 2px 0 0; }
+  .tc-val { font-size: 13px; color: #aaa; }
+  .tc-arrow { text-align: center; font-size: 22px; color: #333; margin: 12px 0; }
+  .tc-output { display: flex; align-items: center; gap: 20px; padding: 16px 20px; background: #0e0e18; border-radius: 3px; border-left: 4px solid #c8a84b; }
+  .tc-color { width: 48px; height: 48px; border-radius: 50%; background: #c8a84b; box-shadow: 0 0 20px #c8a84b55; flex-shrink: 0; }
+  .tc-result-label { font-size: 9px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin-bottom: 4px; }
+  .tc-result-name { font-size: 18px; color: #c8a84b; letter-spacing: 2px; }
+  .tc-result-nl { font-size: 12px; color: #888; font-family: Georgia, serif; margin-top: 4px; }
+  .tc-formula { font-size: 11px; color: #555; margin-top: 6px; }
+
+  /* System diagram */
+  .sys-diagram { display: grid; grid-template-columns: 1fr 2px 1fr 2px 1fr; gap: 0; background: #0a0a14; border: 1px solid #1a1a2a; border-radius: 3px; overflow: hidden; }
+  .sys-col { padding: 20px 16px; }
+  .sys-divider { background: #1a1a2a; }
+  .sys-col-title { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #555; margin-bottom: 14px; }
+  .sys-item { background: #0e0e18; border-radius: 2px; padding: 8px 10px; margin-bottom: 6px; font-size: 10px; color: #888; border-left: 2px solid #1e1e2e; }
+  .sys-item.highlight { border-left-color: #c8a84b; color: #c8a84b; }
+  .sys-item.purple { border-left-color: #8866ff; color: #aa88ff; }
+  .sys-item.green { border-left-color: #44aa66; color: #66cc88; }
+  .sys-connect { font-size: 16px; color: #c8a84b; text-align: center; margin: 8px 0; }
+
+  /* Callout */
+  .callout { border-left: 3px solid #c8a84b; background: #0e0e18; padding: 14px 18px; margin: 16px 0; font-size: 12px; color: #888; line-height: 1.7; font-family: Georgia, serif; }
+  .callout strong { color: #c8a84b; }
+  .callout.purple { border-left-color: #8866ff; }
+  .callout.purple strong { color: #aa88ff; }
+
+  /* Footer */
+  .page-footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #1a1a2a; display: flex; justify-content: space-between; font-size: 9px; color: #333; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="system-label">JENGO / SCP — Emotion-Driven Cognitive Architecture</div>
+  <div class="page-title">EMOTION ENGINE MODULE</div>
+  <div class="page-subtitle">Van psychologisch concept naar berekenbare toestand in een dynamisch systeem</div>
+  <div class="page-meta">
+    <span>Versie <b>1.0</b></span>
+    <span>Basis <b>Plutchik × SOLFBMQ</b></span>
+    <span>Datum <b>25 maart 2026</b></span>
+    <span>Status <b>Werkende module</b></span>
+  </div>
+</div>
+
+
+<!-- §1: ARCHITECTUURPOSITIE -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-id">§ 01</div>
+    <div class="section-title">Positie in de SOLFBMQ-Stack</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <p>De Emotion Engine injecteert een affectieve toestandsvector tussen de S-laag (Sensing) en de L-laag (Logic). De vector beïnvloedt de F-laag (Filter/Blacklist) via gewichten en keert terug via de Q-laag (reflectie in 120ms).</p>
+
+  <div class="stack">
+    <div class="stack-layer s">
+      <div class="stack-letter">S</div>
+      <div class="stack-name">SENSING — Input / Tokenisatie</div>
+      <div class="stack-note">ruwe perceptie</div>
+    </div>
+    <div class="stack-arrow">↓ &nbsp; input_vector → EmotionEngine.update()</div>
+    <div class="stack-layer emotion">
+      <div class="stack-letter">EE</div>
+      <div class="stack-name">EMOTION ENGINE — Affective State Vector</div>
+      <div class="stack-note" style="color:#c8a84b;">⬅ DEZE MODULE</div>
+    </div>
+    <div class="stack-arrow">↓ &nbsp; emotion_vector → gewichten naar O + L + F</div>
+    <div class="stack-layer o">
+      <div class="stack-letter">O</div>
+      <div class="stack-name">ORIENTATION — Patroonherkenning</div>
+      <div class="stack-note">affect beïnvloedt aandacht</div>
+    </div>
+    <div class="stack-layer l">
+      <div class="stack-letter">L</div>
+      <div class="stack-name">LOGIC — Redeneren</div>
+      <div class="stack-note">affect beïnvloedt framing</div>
+    </div>
+    <div class="stack-layer f">
+      <div class="stack-letter">F</div>
+      <div class="stack-name">FILTER — Blacklist / Affect Reduction</div>
+      <div class="stack-note">drempel = f(emotie-intensiteit)</div>
+    </div>
+    <div class="stack-layer b">
+      <div class="stack-letter">B</div>
+      <div class="stack-name">BEHAVIOR — Actiegewicht / Output Mapping</div>
+      <div class="stack-note">emotie → actiegewicht</div>
+    </div>
+    <div class="stack-layer m">
+      <div class="stack-letter">M</div>
+      <div class="stack-name">MEMORY — STATE HISTORY / Canon</div>
+      <div class="stack-note">history.append(state)</div>
+    </div>
+    <div class="stack-arrow loop" style="color:#8866ff;">↑ &nbsp; reflect() → delta_vector → S-laag nieuwe cyclus &nbsp; [OUROBOROS]</div>
+    <div class="stack-layer q">
+      <div class="stack-letter">Q</div>
+      <div class="stack-name">Q-LAAG — Transversale coherentie (120ms)</div>
+      <div class="stack-note" style="color:#8866ff;">reflectie door alle lagen simultaan</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- §2: DE VECTOR -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-id">§ 02</div>
+    <div class="section-title">De Emotievector — 8 Dimensies × 3 Intensiteiten</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <p>Elke emotie is een waarde 0.0 → 1.0. Drie intensiteitsniveaus schalen de basiswaarde. Dit is geen label — het is een vector in een 8-dimensionale affectieve ruimte.</p>
+
+  <div class="vector-grid">
+    <div class="emotion-card joy">
+      <div class="emotion-name">JOY</div>
+      <div class="emotion-nl">Vreugde</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+    <div class="emotion-card trust">
+      <div class="emotion-name">TRUST</div>
+      <div class="emotion-nl">Vertrouwen</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+    <div class="emotion-card fear">
+      <div class="emotion-name">FEAR</div>
+      <div class="emotion-nl">Angst</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+    <div class="emotion-card surprise">
+      <div class="emotion-name">SURPRISE</div>
+      <div class="emotion-nl">Verrassing</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+    <div class="emotion-card sadness">
+      <div class="emotion-name">SADNESS</div>
+      <div class="emotion-nl">Verdriet</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+    <div class="emotion-card disgust">
+      <div class="emotion-name">DISGUST</div>
+      <div class="emotion-nl">Walging</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+    <div class="emotion-card anger">
+      <div class="emotion-name">ANGER</div>
+      <div class="emotion-nl">Woede</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+    <div class="emotion-card anticipation">
+      <div class="emotion-name">ANTICIPATION</div>
+      <div class="emotion-nl">Verwachting</div>
+      <div class="intensity-row"><div class="intensity-label">laag</div><div class="intensity-bar"><div class="intensity-fill" style="width:33%"></div></div><div class="intensity-val">0.33</div></div>
+      <div class="intensity-row"><div class="intensity-label">midden</div><div class="intensity-bar"><div class="intensity-fill" style="width:66%"></div></div><div class="intensity-val">0.66</div></div>
+      <div class="intensity-row"><div class="intensity-label">hoog</div><div class="intensity-bar"><div class="intensity-fill" style="width:100%"></div></div><div class="intensity-val">1.00</div></div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-label">Datastructuur — EmotionState</div>
+    <pre><span class="kw">class</span> <span class="cls">EmotionState</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>):
+        <span class="kw">self</span>.vector = {
+            <span class="st">"joy"</span>:          <span class="num">0.0</span>,   <span class="cm"># vreugde</span>
+            <span class="st">"trust"</span>:        <span class="num">0.0</span>,   <span class="cm"># vertrouwen</span>
+            <span class="st">"fear"</span>:         <span class="num">0.0</span>,   <span class="cm"># angst</span>
+            <span class="st">"surprise"</span>:     <span class="num">0.0</span>,   <span class="cm"># verrassing</span>
+            <span class="st">"sadness"</span>:      <span class="num">0.0</span>,   <span class="cm"># verdriet</span>
+            <span class="st">"disgust"</span>:      <span class="num">0.0</span>,   <span class="cm"># walging</span>
+            <span class="st">"anger"</span>:        <span class="num">0.0</span>,   <span class="cm"># woede</span>
+            <span class="st">"anticipation"</span>: <span class="num">0.0</span>    <span class="cm"># verwachting</span>
+        }
+
+    <span class="kw">def</span> <span class="fn">normalize</span>(<span class="kw">self</span>):
+        total = <span class="fn">sum</span>(<span class="kw">self</span>.vector.<span class="fn">values</span>())
+        <span class="kw">if</span> total > <span class="num">0</span>:
+            <span class="kw">for</span> k <span class="kw">in</span> <span class="kw">self</span>.vector:
+                <span class="kw">self</span>.vector[k] /= total   <span class="cm"># alle dimensies optellen = 1.0</span></pre>
+  </div>
+</div>
+
+
+<!-- §3: MENGMATRIX -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-id">§ 03</div>
+    <div class="section-title">Mengmatrix — Compositie-Algebra van Emotie</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <p>Secundaire emoties ontstaan door vectoroptelling van twee primaire emoties. Dit is geen illustratie — het is berekenbare compositie. E_new = E_a + E_b.</p>
+
+  <div class="blend-grid">
+    <div class="blend-card">
+      <div class="blend-name">LOVE</div>
+      <div class="blend-nl">Liefde</div>
+      <div class="blend-formula"><span class="ea ea-joy">joy</span><span class="plus">+</span><span class="ea ea-trust">trust</span></div>
+    </div>
+    <div class="blend-card">
+      <div class="blend-name">OPTIMISM</div>
+      <div class="blend-nl">Optimisme</div>
+      <div class="blend-formula"><span class="ea ea-joy">joy</span><span class="plus">+</span><span class="ea ea-anticipation">anticipation</span></div>
+    </div>
+    <div class="blend-card">
+      <div class="blend-name">AWE</div>
+      <div class="blend-nl">Ontzag</div>
+      <div class="blend-formula"><span class="ea ea-fear">fear</span><span class="plus">+</span><span class="ea ea-surprise">surprise</span></div>
+    </div>
+    <div class="blend-card">
+      <div class="blend-name">SUBMISSION</div>
+      <div class="blend-nl">Onderwerping</div>
+      <div class="blend-formula"><span class="ea ea-trust">trust</span><span class="plus">+</span><span class="ea ea-fear">fear</span></div>
+    </div>
+    <div class="blend-card">
+      <div class="blend-name">DISAPPOINT.</div>
+      <div class="blend-nl">Teleurstelling</div>
+      <div class="blend-formula"><span class="ea ea-surprise">surprise</span><span class="plus">+</span><span class="ea ea-sadness">sadness</span></div>
+    </div>
+    <div class="blend-card">
+      <div class="blend-name">REMORSE</div>
+      <div class="blend-nl">Wroeging</div>
+      <div class="blend-formula"><span class="ea ea-sadness">sadness</span><span class="plus">+</span><span class="ea ea-disgust">disgust</span></div>
+    </div>
+    <div class="blend-card">
+      <div class="blend-name">CONTEMPT</div>
+      <div class="blend-nl">Minachting</div>
+      <div class="blend-formula"><span class="ea ea-disgust">disgust</span><span class="plus">+</span><span class="ea ea-anger">anger</span></div>
+    </div>
+    <div class="blend-card">
+      <div class="blend-name">AGGRESSION</div>
+      <div class="blend-nl">Agressie</div>
+      <div class="blend-formula"><span class="ea ea-anger">anger</span><span class="plus">+</span><span class="ea ea-anticipation">anticipation</span></div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-label">Menglogica — blend_emotions()</div>
+    <pre><span class="kw">def</span> <span class="fn">blend_emotions</span>(state):
+    blends = {}
+    blends[<span class="st">"love"</span>]           = state.vector[<span class="key">"joy"</span>]       + state.vector[<span class="key">"trust"</span>]
+    blends[<span class="st">"optimism"</span>]       = state.vector[<span class="key">"joy"</span>]       + state.vector[<span class="key">"anticipation"</span>]
+    blends[<span class="st">"awe"</span>]            = state.vector[<span class="key">"fear"</span>]      + state.vector[<span class="key">"surprise"</span>]
+    blends[<span class="st">"submission"</span>]     = state.vector[<span class="key">"trust"</span>]     + state.vector[<span class="key">"fear"</span>]
+    blends[<span class="st">"disappointment"</span>] = state.vector[<span class="key">"surprise"</span>]  + state.vector[<span class="key">"sadness"</span>]
+    blends[<span class="st">"remorse"</span>]        = state.vector[<span class="key">"sadness"</span>]   + state.vector[<span class="key">"disgust"</span>]
+    blends[<span class="st">"contempt"</span>]       = state.vector[<span class="key">"disgust"</span>]   + state.vector[<span class="key">"anger"</span>]
+    blends[<span class="st">"aggression"</span>]     = state.vector[<span class="key">"anger"</span>]     + state.vector[<span class="key">"anticipation"</span>]
+    <span class="kw">return</span> blends
+
+<span class="kw">def</span> <span class="fn">compute_state_label</span>(state, blends):
+    combined = {**state.vector, **blends}
+    <span class="kw">return</span> <span class="fn">max</span>(combined, key=combined.get)  <span class="cm"># dominante toestand wint</span></pre>
+  </div>
+</div>
+
+
+<!-- §4: OUROBOROS HOOK -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-id">§ 04</div>
+    <div class="section-title">Ouroboros Hook — Reflectie als Delta-Meting</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <p>Het cruciale onderscheid met conventionele AI: de Emotion Engine slaat elke state op in history. De reflectie-functie berekent het verschil tussen de vorige en huidige toestand. Die delta keert terug als input voor de volgende cyclus — de Ouroboros-lus is mechanisch, niet metaforisch.</p>
+
+  <div class="ouroboros-flow" style="margin: 20px 0;">
+    <div class="flow-box active">
+      <div>INPUT</div>
+      <div class="flow-label">sensor data</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box active">
+      <div>update()</div>
+      <div class="flow-label">normalize + blend</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box active">
+      <div>STATE(t)</div>
+      <div class="flow-label">history.append</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">
+      <div>OUTPUT</div>
+      <div class="flow-label">label + kleur</div>
+    </div>
+    <div class="flow-arrow loop">↓</div>
+  </div>
+  <div class="ouroboros-flow" style="margin-bottom: 20px; flex-direction: row-reverse;">
+    <div class="flow-box active">
+      <div>INPUT(t+1)</div>
+      <div class="flow-label">nieuwe cyclus</div>
+    </div>
+    <div class="flow-arrow loop">←</div>
+    <div class="flow-box delta">
+      <div>delta_vector</div>
+      <div class="flow-label">Δ per dimensie</div>
+    </div>
+    <div class="flow-arrow loop">←</div>
+    <div class="flow-box delta">
+      <div>reflect()</div>
+      <div class="flow-label">STATE(t) − STATE(t−1)</div>
+    </div>
+    <div class="flow-arrow loop">←</div>
+    <div class="flow-box">
+      <div>STATE(t−1)</div>
+      <div class="flow-label">history[−2]</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-label">EmotionEngine — Ouroboros + Reflectie</div>
+    <pre><span class="kw">class</span> <span class="cls">EmotionEngine</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>):
+        <span class="kw">self</span>.history = []   <span class="cm"># STATE HISTORY — mechanische vloer</span>
+
+    <span class="kw">def</span> <span class="fn">update</span>(<span class="kw">self</span>, input_vector):
+        state = <span class="cls">EmotionState</span>()
+        state.vector.<span class="fn">update</span>(input_vector)
+        state.<span class="fn">normalize</span>()
+        blends = <span class="fn">blend_emotions</span>(state)
+        label  = <span class="fn">compute_state_label</span>(state, blends)
+        <span class="kw">self</span>.history.<span class="fn">append</span>({<span class="st">"state"</span>: state.vector, <span class="st">"label"</span>: label})
+        <span class="kw">return</span> label
+
+    <span class="kw">def</span> <span class="fn">reflect</span>(<span class="kw">self</span>):          <span class="cm"># Ouroboros hook — delta-meting</span>
+        <span class="kw">if</span> <span class="fn">len</span>(<span class="kw">self</span>.history) < <span class="num">2</span>:
+            <span class="kw">return</span> <span class="kw">None</span>
+        prev  = <span class="kw">self</span>.history[-<span class="num">2</span>][<span class="st">"state"</span>]
+        curr  = <span class="kw">self</span>.history[-<span class="num">1</span>][<span class="st">"state"</span>]
+        delta = {}
+        <span class="kw">for</span> k <span class="kw">in</span> curr:
+            delta[k] = curr[k] - prev[k]   <span class="cm"># Δ per emotie-dimensie</span>
+        <span class="kw">return</span> delta   <span class="cm"># → terug als input volgende cyclus</span></pre>
+  </div>
+
+  <div class="callout purple">
+    <strong>Reflectie = verschilmeting tussen states.</strong> Dit is precies wat bewustzijn doet: niet "wat voel ik nu" maar "wat is er veranderd en waarom." De delta-vector is de embryonale vorm van zelfbewustzijn in een AI-systeem — mechanisch afgedwongen, niet gesimuleerd.
+  </div>
+</div>
+
+
+<!-- §5: TESTCASE -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-id">§ 05</div>
+    <div class="section-title">Testcase — Warmte als Output</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="testcase">
+    <div class="testcase-input">
+      <div class="tc-emotion">
+        <div class="tc-name">JOY</div>
+        <div class="tc-bar-wrap"><div class="tc-bar" style="height:50%;background:#F5C518;"></div></div>
+        <div class="tc-val">0.50</div>
+      </div>
+      <div class="tc-emotion">
+        <div class="tc-name">TRUST</div>
+        <div class="tc-bar-wrap"><div class="tc-bar" style="height:35%;background:#43A047;"></div></div>
+        <div class="tc-val">0.35</div>
+      </div>
+      <div class="tc-emotion">
+        <div class="tc-name">SADNESS</div>
+        <div class="tc-bar-wrap"><div class="tc-bar" style="height:15%;background:#1565C0;"></div></div>
+        <div class="tc-val">0.15</div>
+      </div>
+    </div>
+
+    <div class="tc-arrow">↓ &nbsp; blend_emotions() → joy(0.50) + trust(0.35) = love(0.85) → max(combined)</div>
+
+    <div class="tc-output">
+      <div class="tc-color"></div>
+      <div>
+        <div class="tc-result-label">Dominante toestand</div>
+        <div class="tc-result-name">LOVE</div>
+        <div class="tc-result-nl">Warmte &nbsp;·&nbsp; #C8A84B</div>
+        <div class="tc-formula">joy(0.50) + trust(0.35) = 0.85 &nbsp;›&nbsp; max van alle 16 waarden</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block" style="margin-top:16px;">
+    <div class="code-label">Testcase in code</div>
+    <pre>input_state = {
+    <span class="key">"joy"</span>:     <span class="num">0.5</span>,
+    <span class="key">"trust"</span>:   <span class="num">0.35</span>,
+    <span class="key">"sadness"</span>: <span class="num">0.15</span>
+}
+
+engine = <span class="cls">EmotionEngine</span>()
+label  = engine.<span class="fn">update</span>(input_state)
+
+<span class="fn">print</span>(label)   <span class="cm"># → "love"</span>
+<span class="cm"># visueel: #C8A84B — warmte (amber-goud)</span></pre>
+  </div>
+</div>
+
+
+<!-- §6: SYSTEEMDIAGRAM -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-id">§ 06</div>
+    <div class="section-title">Systeemdiagram — SCP + Emotion Engine + Decision Layer</div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="sys-diagram">
+    <div class="sys-col">
+      <div class="sys-col-title">SCP KERN</div>
+      <div class="sys-item">S — Sensing</div>
+      <div class="sys-connect">↓</div>
+      <div class="sys-item highlight">EE — Emotion Engine</div>
+      <div class="sys-connect">↓</div>
+      <div class="sys-item">O — Orientation</div>
+      <div class="sys-connect">↓</div>
+      <div class="sys-item">L — Logic</div>
+      <div class="sys-connect">↓</div>
+      <div class="sys-item">F — Filter / Blacklist</div>
+      <div class="sys-connect">↓</div>
+      <div class="sys-item">B — Behavior</div>
+      <div class="sys-connect">↓</div>
+      <div class="sys-item">M — Memory</div>
+    </div>
+    <div class="sys-divider"></div>
+    <div class="sys-col">
+      <div class="sys-col-title">EMOTION ENGINE INTERN</div>
+      <div class="sys-item highlight">EmotionState — 8D vector</div>
+      <div class="sys-connect" style="color:#c8a84b;">↓</div>
+      <div class="sys-item highlight">normalize() — som = 1.0</div>
+      <div class="sys-connect" style="color:#c8a84b;">↓</div>
+      <div class="sys-item highlight">blend_emotions() — 8 secondary</div>
+      <div class="sys-connect" style="color:#c8a84b;">↓</div>
+      <div class="sys-item highlight">compute_state_label() — max()</div>
+      <div class="sys-connect" style="color:#c8a84b;">↓</div>
+      <div class="sys-item highlight">history.append() — M-laag</div>
+      <div class="sys-connect" style="color:#8866ff;">↑</div>
+      <div class="sys-item purple">reflect() — delta_vector</div>
+      <div class="sys-connect" style="color:#8866ff;">↑</div>
+      <div class="sys-item purple">Q-laag — 120ms coherentie</div>
+    </div>
+    <div class="sys-divider"></div>
+    <div class="sys-col">
+      <div class="sys-col-title">DECISION LAYER KOPPELING</div>
+      <div class="sys-item green">emotion_weight → Action Weighting</div>
+      <div class="sys-connect" style="color:#44aa66;">↓</div>
+      <div class="sys-item green">intensity → Affect Reduction drempel</div>
+      <div class="sys-connect" style="color:#44aa66;">↓</div>
+      <div class="sys-item green">label → Pause Gate trigger</div>
+      <div class="sys-connect" style="color:#44aa66;">↓</div>
+      <div class="sys-item green">delta → Ouroboros STATE HISTORY</div>
+      <div class="sys-connect" style="color:#44aa66;">↓</div>
+      <div class="sys-item">Volgende stap: tijdsdynamiek</div>
+      <div class="sys-item">E(t+1) = E(t) × decay + input</div>
+      <div class="sys-item">Volgende stap: persoonlijkheidslaag</div>
+      <div class="sys-item">weights per agent verschillend</div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:20px;">
+    <strong>Wat hier is gebouwd:</strong> Een affective state machine met lage dimensionaliteit (8D), reflecteerbare interne toestand (delta-vector), directe koppeling aan de beslissingslaag (Action Weighting, Affect Reduction, Pause Gate), en een mechanische Ouroboros-lus. Geen simulatie van emotie — berekening van een toestand in affectieve ruimte.
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="page-footer">
+  <div>JENGO — EMOTION ENGINE v1.0 — 25 MAART 2026</div>
+  <div>PLUTCHIK × SOLFBMQ × OUROBOROS</div>
+</div>
+
+</body>
+</html>
