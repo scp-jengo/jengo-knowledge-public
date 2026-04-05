@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>JENGO — Kunstenaar Universum</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { background:#060912; color:#C8D4E8;
+  font-family:'Segoe UI',system-ui,sans-serif; min-height:100%; }
+.page { max-width:1200px; margin:0 auto; padding:1.4rem 1.4rem 3rem; }
+
+/* Header */
+.tag { font-size:0.57rem; font-weight:700; letter-spacing:0.22em;
+  text-transform:uppercase; color:#1E3050; }
+.title { font-size:1.4rem; font-weight:800; letter-spacing:-0.02em;
+  background:linear-gradient(90deg,#c8a060,#e8c870,#a0c0e8);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; margin:0.2rem 0 0.3rem; }
+.subtitle { font-size:0.7rem; color:#2A4060; line-height:1.6; }
+
+/* Layout */
+.layout { display:grid; grid-template-columns:264px 1fr; gap:1rem; margin-top:1rem; }
+
+/* Left: input panel */
+.input-col { display:flex; flex-direction:column; gap:0.75rem; }
+.panel { background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.065);
+  border-radius:10px; padding:1rem; }
+.ptitle { font-size:0.58rem; font-weight:700; letter-spacing:0.14em;
+  text-transform:uppercase; color:#1E3555; margin-bottom:0.6rem; }
+
+textarea {
+  width:100%; height:130px; background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.08); border-radius:8px;
+  padding:0.75rem; color:#C0D0E0; font-size:0.76rem;
+  font-family:'Segoe UI',system-ui,sans-serif; resize:vertical;
+  line-height:1.6; outline:none; transition:border-color 0.2s; }
+textarea:focus { border-color:rgba(200,160,80,0.3); }
+textarea::placeholder { color:#1A2E40; }
+
+.btn-row { display:flex; gap:0.5rem; margin-top:0.6rem; }
+.btn-analyse { flex:1; padding:0.48rem; border-radius:7px; border:none; cursor:pointer;
+  font-size:0.73rem; font-weight:700; letter-spacing:0.03em;
+  background:linear-gradient(90deg,#3060c0,#2a90a0); color:#D0E8FF;
+  transition:opacity 0.2s; }
+.btn-analyse:hover { opacity:0.85; }
+.btn-clear { padding:0.45rem 0.8rem; border-radius:7px; cursor:pointer;
+  font-size:0.7rem; background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07); color:#3A5070;
+  transition:background 0.2s; }
+.btn-clear:hover { background:rgba(255,255,255,0.07); }
+
+/* Signal chips */
+.sig-row { display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.55rem; min-height:0; }
+.sig-chip { font-size:0.6rem; padding:0.14rem 0.38rem; border-radius:4px;
+  font-weight:600; border:1px solid; }
+
+/* Persona label */
+.persona-name { font-size:0.9rem; font-weight:800; color:#c8a060;
+  margin-bottom:0.2rem; }
+.conf-tag { font-size:0.6rem; color:#2A4060; margin-bottom:0.65rem; }
+
+/* B5 bars */
+.b5-row { margin-bottom:0.55rem; }
+.b5-head { display:flex; justify-content:space-between; margin-bottom:0.18rem; }
+.b5-name { font-size:0.65rem; color:#4A6070; }
+.b5-val  { font-size:0.63rem; font-family:'Courier New',monospace; font-weight:700; }
+.b5-track { height:4px; background:rgba(255,255,255,0.05); border-radius:2px; }
+.b5-fill  { height:100%; border-radius:2px; transition:width 0.5s ease; }
+
+/* Placeholder text (no analysis yet) */
+.no-analysis { font-size:0.68rem; color:#1A2E40; line-height:1.6; text-align:center;
+  padding:0.8rem 0.4rem; }
+
+/* Right: canvas col */
+.canvas-col { display:flex; flex-direction:column; gap:0.75rem; min-width:0; }
+
+/* Axis bar */
+.axis-bar { display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; }
+.axis-lbl { font-size:0.57rem; font-weight:700; letter-spacing:0.12em;
+  text-transform:uppercase; color:#1E3050; }
+.axis-btn { font-size:0.62rem; font-weight:700; padding:0.3rem 0.7rem;
+  border-radius:6px; border:1px solid rgba(255,255,255,0.07);
+  background:rgba(255,255,255,0.02); color:#2A4060; cursor:pointer;
+  transition:all 0.18s; }
+.axis-btn:hover { color:#6A8090; border-color:rgba(255,255,255,0.14); }
+.axis-btn.active { background:rgba(200,160,80,0.1); border-color:rgba(200,160,80,0.32);
+  color:#c8a060; }
+.axis-desc { font-size:0.6rem; color:#2A4060; margin-left:0.2rem; }
+
+/* Canvas */
+.canvas-wrap { position:relative; border:1px solid rgba(255,255,255,0.055);
+  border-radius:12px; overflow:hidden; background:rgba(255,255,255,0.007);
+  cursor:crosshair; }
+canvas { display:block; }
+
+/* Match panel */
+.match-panel { display:none; border:1px solid rgba(232,192,64,0.2); border-radius:10px;
+  padding:1rem 1.1rem; background:rgba(232,192,64,0.04); }
+.match-panel.visible { display:block; animation:fadeIn 0.25s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.match-title { font-size:0.57rem; font-weight:700; letter-spacing:0.14em;
+  text-transform:uppercase; color:#c8a060; margin-bottom:0.7rem; }
+.match-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:0.6rem;
+  margin-bottom:0.8rem; }
+.match-card { background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.055);
+  border-radius:8px; padding:0.6rem 0.7rem; cursor:pointer; transition:all 0.18s; }
+.match-card:hover { background:rgba(255,255,255,0.03); }
+.match-card.top { border-color:rgba(232,192,64,0.4); background:rgba(232,192,64,0.05); }
+.mc-rank { font-size:0.58rem; font-weight:700; color:#1E3555; margin-bottom:0.3rem; }
+.mc-emoji { font-size:1.3rem; margin-bottom:0.2rem; }
+.mc-name  { font-size:0.7rem; font-weight:700; margin-bottom:0.15rem; }
+.mc-styles{ font-size:0.58rem; color:#1E3555; margin-bottom:0.4rem; }
+.mc-track { height:3px; background:rgba(255,255,255,0.05); border-radius:2px; margin-bottom:0.2rem; }
+.mc-fill  { height:100%; border-radius:2px; }
+.mc-pct   { font-size:0.62rem; font-family:'Courier New',monospace; font-weight:700; }
+.match-insight { font-size:0.69rem; color:#4A6070; line-height:1.65; font-style:italic;
+  border-left:2px solid #c8a06055; padding-left:0.7rem; }
+
+/* Artist detail panel */
+.detail { display:none; border:1px solid rgba(255,255,255,0.07); border-radius:10px;
+  padding:1.1rem 1.3rem; background:rgba(255,255,255,0.013);
+  animation:fadeIn 0.2s ease; }
+.detail.visible { display:block; }
+
+.det-header { display:flex; align-items:center; gap:0.9rem; margin-bottom:0.9rem; }
+.det-emoji  { font-size:2rem; }
+.det-name   { font-size:1rem; font-weight:800; }
+.det-period { font-size:0.6rem; color:#2A4060; margin-top:0.1rem; }
+.det-styles { display:flex; flex-wrap:wrap; gap:0.2rem; margin-top:0.3rem; }
+.det-style  { font-size:0.57rem; padding:0.1rem 0.32rem; border-radius:4px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.055); color:#3A5070; }
+.det-body   { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; }
+.det-section h4 { font-size:0.56rem; font-weight:700; letter-spacing:0.13em;
+  text-transform:uppercase; color:#1E3555; margin-bottom:0.55rem; }
+
+.b5r { margin-bottom:0.4rem; }
+.b5r-label { display:flex; justify-content:space-between; font-size:0.62rem;
+  margin-bottom:0.15rem; }
+.b5r-track { height:3px; background:rgba(255,255,255,0.05); border-radius:2px; }
+.b5r-fill  { height:100%; border-radius:2px; }
+
+.sim-row { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.45rem;
+  cursor:pointer; padding:0.2rem 0.35rem; border-radius:5px; transition:background 0.15s; }
+.sim-row:hover { background:rgba(255,255,255,0.03); }
+.insight-text { font-size:0.68rem; color:#3A5060; line-height:1.65; font-style:italic; }
+
+/* Legend */
+.legend-wrap { display:flex; flex-wrap:wrap; gap:0.35rem 0.65rem; }
+.leg-item { display:flex; align-items:center; gap:0.3rem; font-size:0.6rem;
+  color:#2A4060; cursor:pointer; transition:color 0.15s; }
+.leg-item:hover { color:#7A90A0; }
+.leg-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.hint { font-size:0.58rem; color:#1A2E40; text-align:center; margin-top:0.3rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="tag">JENGO — Big Five Persoonlijkheidsruimte</div>
+  <h1 class="title">Kunstenaar Universum</h1>
+  <p class="subtitle">Beschrijf een koper in gewone taal. JENGO extraheert Big Five-signalen, plaatst de koper als ★ in de kunstenaarsruimte en berekent de beste matches.</p>
+
+  <div class="layout">
+
+    <!-- LEFT: buyer input -->
+    <div class="input-col">
+
+      <div class="panel">
+        <div class="ptitle">Beschrijf de koper</div>
+        <textarea id="kopertxt" placeholder="Bijv.: Hij is een rustige architect, introvert maar warm. Houdt van orde en abstracte vormen. Denkt lang na voor hij iets koopt. Meer hoofd dan hart..."></textarea>
+        <div class="btn-row">
+          <button class="btn-analyse" onclick="analyseKoper()">Analyseer →</button>
+          <button class="btn-clear"   onclick="clearKoper()">Wis</button>
+        </div>
+        <div class="sig-row" id="sigRow"></div>
+      </div>
+
+      <div class="panel" id="b5Panel">
+        <div id="b5Content">
+          <div class="no-analysis">Typ een beschrijving en klik Analyseer →<br>De koper verschijnt als ★ in het universum.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: canvas + results -->
+    <div class="canvas-col">
+
+      <div class="axis-bar">
+        <span class="axis-lbl">As</span>
+        <button class="axis-btn active" onclick="setAxis(0)">O × N</button>
+        <button class="axis-btn"        onclick="setAxis(1)">O × E</button>
+        <button class="axis-btn"        onclick="setAxis(2)">C × E</button>
+        <button class="axis-btn"        onclick="setAxis(3)">O × C</button>
+        <span class="axis-desc" id="axisDesc">Openheid × Neuroticisme</span>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="cv"></canvas>
+      </div>
+
+      <div class="match-panel" id="matchPanel"></div>
+      <div class="detail"      id="detail"></div>
+
+      <div>
+        <div class="tag" style="margin-bottom:0.4rem">Alle kunstenaars</div>
+        <div class="legend-wrap" id="legend"></div>
+      </div>
+      <div class="hint">Klik kunstenaar voor details · Verbindingen = Big Five-verwantschap · ★ = koper positie</div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// LEXICON — Big Five signaalwoorden (NL)
+// ═══════════════════════════════════════════════════════════════
+const LEXICON = {
+  O: {
+    high:['creatief','creativiteit','artistiek','kunstzinnig','kunstliefhebber','kunst','ontwerp',
+      'verbeelding','fantasie','dromen','origineel','innovatief','experimenteel','vernieuwend',
+      'nieuwsgierig','filosofisch','filosofie','abstract','theoretisch','intellectueel',
+      'lezen','boeken','literatuur','poëzie','poëtisch','conceptueel',
+      'open','breed','divers','cultureel','veelzijdig','avontuurlijk','ontdekken','verkennen',
+      'intuïtief','spiritueel','mystiek','zingevend','betekenis','symbolisch',
+      'muziek','theater','film','dans','galerie','museum','tentoonstelling','architectuur',
+      'design','mode','fotografie','schrijven','schilderen','tekenen','beeldhouwen',
+      'onconventioneel','alternatief','eigenzinnig','vrij','vrijheid','idealistisch','dromer'],
+    low:['praktisch','nuchter','down-to-earth','concreet','hands-on','traditioneel','conventioneel',
+      'gewoon','routinematig','standaard','realistisch','pragmatisch','functioneel'],
+  },
+  C: {
+    high:['ordelijk','georganiseerd','organisatie','structuur','systeem','methode','methodisch',
+      'punctueel','nauwkeurig','precies','zorgvuldig','grondig','gedetailleerd',
+      'gedisciplineerd','discipline','consequent','betrouwbaar','verantwoordelijk',
+      'ambitieus','doelgericht','doelen','planmatig','planning','serieus','professioneel',
+      'hard werkend','nauwgezet','degelijk','strak','rigoureus'],
+    low:['spontaan','spontaniteit','impulsief','nonchalant','luchtig','flexibel','makkelijk',
+      'chaotisch','chaos','relaxed','ontspannen','losjes'],
+  },
+  E: {
+    high:['extravert','sociaal','uitgesproken','energiek','levendig','enthousiast',
+      'gezellig','netwerken','netwerk','mensen','groep','team','samenwerken','presenteren',
+      'spreken','communicatief','verbindend','aanwezig','dynamisch','actief','praten',
+      'feest','bijeenkomst','evenement','contact','vrienden','kennissen'],
+    low:['introvert','teruggetrokken','stil','rustig','solitair','gereserveerd','alleen',
+      'reflectief','bedachtzaam','observerend','intern','eenzaam','liever alleen',
+      'eigen wereld','stilte','rust','afstandelijk'],
+  },
+  A: {
+    high:['warm','warmte','empathisch','empathie','meelevend','medeleven','behulpzaam',
+      'vriendelijk','vriendelijkheid','zorgzaam','zorg','anderen','helpen','hulp',
+      'samenwerken','collaboratief','coöperatief','gul','vrijgevig','vergevingsgezind',
+      'mensgericht','betrokken','meevoelend','liefdevol','hartelijk','attent','verzorgend'],
+    low:['assertief','competitief','kritisch','analytisch','onafhankelijk','direct',
+      'confronterend','principieel','zakelijk','hard','scherp','afstandelijk','koeler','objectief'],
+  },
+  N: {
+    high:['gevoelig','gevoeligheid','emotioneel','emoties','angstig','angst','bezorgd',
+      'intens','intensief','gepassioneerd','passie','complex','diep','innerlijk',
+      'melancholisch','melancholie','sensitief','kwetsbaar','kwetsbaarheid','worstelen',
+      'piekeren','onzeker','onzekerheid','spanning','stress','reageren'],
+    low:['stabiel','stabiliteit','kalm','kalmte','evenwichtig','nuchter','ontspannen',
+      'zelfverzekerd','stressbestendig','geaard','sereen','standvastig'],
+  },
+};
+
+const B5_DEF = { O:0.60, C:0.55, E:0.50, A:0.60, N:0.45 };
+
+// ═══════════════════════════════════════════════════════════════
+// ARTISTS
+// ═══════════════════════════════════════════════════════════════
+const ARTISTS = [
+  { id:'picasso',     name:'Picasso',      fullname:'Pablo Picasso',        emoji:'🎨', color:'#e09040', period:'1881–1973',
+    profile:{ O:0.90, C:0.35, E:0.72, A:0.40, N:0.60 }, styles:['Kubisme','Expressionisme','Abstractie'],
+    insight:'Picasso is geen kunstenaar die je bewondert — hij is er een die je provoceert. De aantrekkingskracht zit in de spanning, niet de harmonie.' },
+  { id:'rembrandt',   name:'Rembrandt',    fullname:'Rembrandt van Rijn',   emoji:'🕯️', color:'#b08040', period:'1606–1669',
+    profile:{ O:0.78, C:0.65, E:0.38, A:0.55, N:0.70 }, styles:['Chiaroscuro','Portret','Psychologie'],
+    insight:'Rembrandt vraagt geduld. De beloning is het gevoel dat hij jou schildert — niet de persoon op het doek.' },
+  { id:'mondriaan',   name:'Mondriaan',    fullname:'Piet Mondriaan',       emoji:'⬛', color:'#e0d040', period:'1872–1944',
+    profile:{ O:0.65, C:0.88, E:0.30, A:0.42, N:0.35 }, styles:['De Stijl','Geometrie','Orde'],
+    insight:'Mondriaan is de kunstenaar van mensen die het universum liever begrijpen dan voelen. Zijn werk is geen gevoel — het is een redenering.' },
+  { id:'kandinsky',   name:'Kandinsky',    fullname:'Wassily Kandinsky',    emoji:'🔵', color:'#6090e0', period:'1866–1944',
+    profile:{ O:0.95, C:0.45, E:0.65, A:0.50, N:0.55 }, styles:['Abstractie','Synaesthesie','Kleur'],
+    insight:'Kandinsky is niet te begrijpen met het hoofd. Hij werkt via het lichaam — als je hem voelt, ben je zijn doelpubliek.' },
+  { id:'brancusi',    name:'Brancusi',     fullname:'Constantin Brancusi',  emoji:'🗿', color:'#90c0a0', period:'1876–1957',
+    profile:{ O:0.82, C:0.72, E:0.28, A:0.48, N:0.42 }, styles:['Reductie','Essentie','Sculptuur'],
+    insight:"Brancusi is voor mensen die méér zien in minder. Zijn stille aanwezigheid is het tegenovergestelde van Picasso's lawaai — beiden veranderen alles." },
+  { id:'pompon',      name:'Pompon',       fullname:'François Pompon',      emoji:'🐻‍❄️', color:'#80d0e0', period:'1855–1933',
+    profile:{ O:0.70, C:0.82, E:0.40, A:0.72, N:0.30 }, styles:['Dier','Vakmanschap','Rust'],
+    insight:'Pompon is de kunstenaar die mensen kiezen als ze klaar zijn met het lawaai. Zijn werk vraagt niets — het geeft.' },
+  { id:'malevich',    name:'Malevich',     fullname:'Kazimir Malevich',     emoji:'🔲', color:'#A8A8B8', period:'1879–1935',
+    profile:{ O:0.95, C:0.72, E:0.22, A:0.32, N:0.28 }, styles:['Suprematisme','Geometrie','Avant-garde'],
+    insight:'Malevich is niet te begrijpen als decoratie. Zijn werk is filosofie in verf — of je accepteert de vraag die het stelt, of je kijkt er niet naar.' },
+  { id:'miro',        name:'Miró',         fullname:'Joan Miró',            emoji:'🌈', color:'#E06040', period:'1893–1983',
+    profile:{ O:0.92, C:0.35, E:0.72, A:0.68, N:0.48 }, styles:['Surrealisme','Kleur','Droomwereld'],
+    insight:'Miró bewijst dat vreugde een serieuze artistieke categorie is. Zijn werk is niet naïef — het is bewust vrolijk, en dat is moeilijker.' },
+  { id:'bacon',       name:'Bacon',        fullname:'Francis Bacon',        emoji:'🩸', color:'#C03020', period:'1909–1992',
+    profile:{ O:0.88, C:0.28, E:0.55, A:0.28, N:0.92 }, styles:['Expressionisme','Existentialisme','Psychologisch'],
+    insight:'Bacon is de kunstenaar voor mensen die al te ver in zichzelf hebben gekeken om nog te geloven in geschilderde troost.' },
+  { id:'lucianfreud', name:'L. Freud',     fullname:'Lucian Freud',         emoji:'🫀', color:'#D4906A', period:'1922–2011',
+    profile:{ O:0.78, C:0.78, E:0.30, A:0.32, N:0.72 }, styles:['Hyperrealisme','Portret','Huid'],
+    insight:'Lucian Freud toont mensen zoals ze willen dat ze gezien worden — niet mooi, niet lelijk, maar waar.' },
+  { id:'giacometti',  name:'Giacometti',   fullname:'Alberto Giacometti',   emoji:'🚶', color:'#8BA090', period:'1901–1966',
+    profile:{ O:0.85, C:0.68, E:0.28, A:0.45, N:0.72 }, styles:['Existentialisme','Sculptuur','Eenzaamheid'],
+    insight:'Giacometti maakte de eenzaamheid zichtbaar die iedereen voelt maar niemand uitdrukt. Zijn werk is het meest eerlijke portret van de moderne mens.' },
+  { id:'lichtenstein',name:'Lichtenstein', fullname:'Roy Lichtenstein',     emoji:'💥', color:'#E8D040', period:'1923–1997',
+    profile:{ O:0.80, C:0.72, E:0.70, A:0.55, N:0.30 }, styles:['Pop Art','Ironie','Massamedia'],
+    insight:"Lichtenstein stelt de vraag: 'Wat is kunst?' — via werk dat er uitdagend niet uit ziet als kunst. De grap heeft 50 jaar niet aan kracht verloren." },
+  { id:'haring',      name:'Haring',       fullname:'Keith Haring',         emoji:'⚡', color:'#E8405A', period:'1958–1990',
+    profile:{ O:0.85, C:0.48, E:0.90, A:0.80, N:0.48 }, styles:['Straatkunst','Activisme','Energie'],
+    insight:'Haring bewees dat kunst de straat nodig heeft — niet als vernedering maar als voltooiing. Zijn werk is blijheid met urgentie.' },
+  { id:'basquiat',    name:'Basquiat',     fullname:'Jean-Michel Basquiat', emoji:'👑', color:'#C060D0', period:'1960–1988',
+    profile:{ O:0.92, C:0.25, E:0.72, A:0.52, N:0.85 }, styles:['Neo-expressionisme','Graffiti','Identiteit'],
+    insight:'Basquiat werd beroemd voordat hij begrijpend werd — en de meeste mensen zijn hem nog steeds aan het inhalen.' },
+  { id:'okeeffe',     name:"O'Keeffe",     fullname:"Georgia O'Keeffe",     emoji:'🌸', color:'#E890B0', period:'1887–1986',
+    profile:{ O:0.82, C:0.75, E:0.30, A:0.62, N:0.35 }, styles:['Modernisme','Natuur','Close-up'],
+    insight:"O'Keeffe is de kunstenaar van mensen die de wereld liever van dichtbij zien. Haar werk vraagt geen kennis — het vraagt geduld." },
+  { id:'bourgeois',   name:'Bourgeois',    fullname:'Louise Bourgeois',     emoji:'🕷️', color:'#8060A0', period:'1911–2010',
+    profile:{ O:0.90, C:0.55, E:0.48, A:0.55, N:0.88 }, styles:['Feminisme','Sculptuur','Trauma'],
+    insight:'Bourgeois maakte werk voor mensen die nog te verwerken hebben. Haar spinnen zijn geen enge kunst — het zijn kathedralen van moederlijk ambivalentie.' },
+  { id:'gilioli',     name:'Gilioli',      fullname:'Émile Gilioli',        emoji:'🌑', color:'#B09070', period:'1911–1977',
+    profile:{ O:0.85, C:0.75, E:0.28, A:0.55, N:0.38 }, styles:['Abstractie','Organisch','Bronsbewerking'],
+    insight:'Gilioli combineert twee dingen die zelden samengaan: ritmische energie én rigoureuze stilte. Zijn abstracte vormen bewegen zonder ergens heen te gaan.' },
+  { id:'arp',         name:'Arp',          fullname:'Hans Arp',             emoji:'🫧', color:'#90D0B0', period:'1886–1966',
+    profile:{ O:0.93, C:0.40, E:0.62, A:0.72, N:0.45 }, styles:['Biomorph','Dada','Surrealisme'],
+    insight:'Arp bewees dat spontaniteit een methode kan zijn. Zijn biomorfe vormen zijn niet willekeurig — ze zijn bewust niet-menselijk, en daarin precies menselijk.' },
+  { id:'asawa',       name:'Asawa',        fullname:'Ruth Asawa',           emoji:'🕸️', color:'#A0C8D0', period:'1926–2013',
+    profile:{ O:0.88, C:0.82, E:0.48, A:0.75, N:0.28 }, styles:['Draadsculptuur','Geometrie','Meditatie'],
+    insight:'Asawa maakte complexiteit zichtbaar zonder haar te verklaren. Haar draadwerken zijn geen technische prestaties — het zijn geduld in drie dimensies.' },
+  { id:'noguchi',     name:'Noguchi',      fullname:'Isamu Noguchi',        emoji:'⛩️', color:'#8090A8', period:'1904–1988',
+    profile:{ O:0.88, C:0.70, E:0.55, A:0.65, N:0.32 }, styles:['Biomorph','Steen','Ruimte'],
+    insight:'Noguchi vraagt niet wat een object betekent, maar wat het doet met de ruimte eromheen. Zijn werk is het bewijs dat leegte even veel kan zeggen als vorm.' },
+  { id:'dejonge',     name:'De Jonge',     fullname:'Joost de Jonge',       emoji:'🎵', color:'#C07850', period:'1975–',
+    profile:{ O:0.92, C:0.58, E:0.50, A:0.65, N:0.48 }, styles:['Lyrische Abstractie','Biomorph','Muzikaal'],
+    insight:'"Ik probeer een ijkpunt voor de ziel te zijn — een vrijplaats voor gevoel en harmonie, maar actief." De Jonge maakt geen rust, hij maakt energie die eruitziet als rust.' },
+  { id:'bramvanvelde', name:'Van Velde',   fullname:'Bram van Velde',       emoji:'🟪', color:'#7070A8', period:'1895–1981',
+    profile:{ O:0.90, C:0.65, E:0.22, A:0.35, N:0.62 }, styles:['Lyrische Abstractie','Kleurvlakken','Non-figuratief'],
+    insight:'Van Velde geeft zijn werk geen titels — niet als bescheidenheid, maar als principe. De kijker staat alleen voor het vlak. Geen uitleg, geen uitweg.' },
+  { id:'toorop',       name:'Toorop',      fullname:'Jan Toorop',           emoji:'🌿', color:'#C0A050', period:'1858–1928',
+    profile:{ O:0.92, C:0.72, E:0.65, A:0.75, N:0.52 }, styles:['Symbolisme','Art Nouveau','Lineair Idealisme'],
+    insight:'Toorop liet zijn idealisme in dienst staan van het alledaagse — van slaolie tot arbeidersverheffing. De spanning tussen zijn symbolische taal en de kapitalistische ruimte die hij versierde is niet opgelost. Ze is er nog steeds.' },
+  { id:'zadkine',      name:'Zadkine',     fullname:'Ossip Zadkine',        emoji:'💔', color:'#8080A0', period:'1888–1967',
+    profile:{ O:0.88, C:0.68, E:0.55, A:0.58, N:0.72 }, styles:['Expressief Kubisme','Sculptuur','Monument'],
+    insight:'Zadkine hakte een man zonder hart uit steen — als monument voor Rotterdam, maar ook als zelfportret van een generatie die te veel had meegemaakt om ongeschonden te blijven.' },
+  { id:'chagall',      name:'Chagall',     fullname:'Marc Chagall',         emoji:'🎻', color:'#7080D0', period:'1887–1985',
+    profile:{ O:0.95, C:0.58, E:0.65, A:0.80, N:0.52 }, styles:['Lyrisch Surrealisme','Joods Folklore','Kleur & Droom'],
+    insight:'Chagall schilderde niet wat hij zag, maar wat hij droeg — zijn geboortestad, zijn geloof, zijn liefde. De vliegende figuren zijn geen surrealisme; het is geheugen dat zich losmaakt van de zwaartekracht.' },
+  { id:'riezebos',     name:'Riezebos',    fullname:'Peter Riezebos',       emoji:'🔥', color:'#C84028', period:'1980–',
+    profile:{ O:0.92, C:0.35, E:0.78, A:0.48, N:0.80 }, styles:['Neo-expressionisme','CoBrA','Mixed Media'],
+    insight:'Riezebos schildert niet op een ezel maar op de grond — met zijn hele lichaam. Het canvas is een arena. De wiskundige formules naast de poëtische teksten zijn allebei pogingen grip te krijgen op een wereld die te snel gaat.' },
+  { id:'vandelft',     name:'Van Delft',   fullname:'Loes van Delft',       emoji:'🎈', color:'#E8B020', period:'1991–',
+    profile:{ O:0.88, C:0.72, E:0.85, A:0.82, N:0.25 }, styles:['Pop Art','Cartoon','Vakmanschap'],
+    insight:'Van Delft lijkt speels maar is precies. De cartoonstijl is geen gebrek aan ernst — het is een bewuste keuze om vreugde als serieuze artistieke categorie te behandelen. Net als Miró, maar sneller.' },
+  { id:'pollock',      name:'Pollock',     fullname:'Jackson Pollock',      emoji:'🌀', color:'#4A3888', period:'1912–1956',
+    profile:{ O:0.95, C:0.22, E:0.45, A:0.28, N:0.95 }, styles:['Abstract Expressionisme','Drip Painting','Gestural'],
+    insight:'"I feel nearer, more part of the painting — literally be in the painting." Pollock zocht geen afstand tot het werk. Hij wilde er deel van zijn. De vloer, het lichaam, de beweging: alles in dienst van één ding — verdwijnen in het canvas.' },
+  { id:'rbugatti',     name:'R. Bugatti',  fullname:'Rembrandt Bugatti',    emoji:'🐘', color:'#B08050', period:'1884–1916',
+    profile:{ O:0.88, C:0.92, E:0.22, A:0.72, N:0.90 }, styles:['Animalier','Brons','Observatie'],
+    insight:'Bugatti bracht jaren door met het bestuderen van dieren — hun beweging, hun persoonlijkheid, hun ziel. Hij kon de essentie van een dier vangen in brons, maar niet zijn eigen pijn dragen. Zijn werk is het mooiste bewijs dat gevoeligheid zowel gave als last kan zijn.' },
+  { id:'barye',        name:'Barye',       fullname:'Antoine-Louis Barye',  emoji:'🦁', color:'#A07040', period:'1796–1875',
+    profile:{ O:0.82, C:0.85, E:0.30, A:0.42, N:0.55 }, styles:['Animalier','Realisme','Dynamiek'],
+    insight:'Barye stichtte de animalier-school door roofdieren niet als symbool maar als kracht te zien. Zijn gevechtsscènes zijn anatomisch én dramatisch — wetenschap en emotie in één greep.' },
+  { id:'bonheur',      name:'Bonheur',     fullname:'Rosa Bonheur',         emoji:'🐴', color:'#D4A070', period:'1822–1899',
+    profile:{ O:0.78, C:0.80, E:0.45, A:0.65, N:0.42 }, styles:['Animalier','Realisme','Schilderkunst'],
+    insight:'Bonheur werkte in een domein dat vrouwen niet toebehoorde — en won er de hoogste onderscheiding voor. Haar dieren zijn sterk zonder dramatisch te zijn: waardigheid als artistieke keuze.' },
+  { id:'mene',         name:'Mêne',        fullname:'Pierre-Jules Mêne',    emoji:'🐕', color:'#C0A060', period:'1810–1879',
+    profile:{ O:0.62, C:0.85, E:0.55, A:0.68, N:0.30 }, styles:['Animalier','Decoratief','Vakmanschap'],
+    insight:'Mêne begreep dat schoonheid en toegankelijkheid geen tegenstelling zijn. Zijn honden en paarden zijn niet minder serieus omdat ze geliefd zijn — ze zijn geliefd omdat ze serieus zijn.' },
+  { id:'cain',         name:'Cain',        fullname:'Auguste Cain',         emoji:'🐅', color:'#907050', period:'1822–1894',
+    profile:{ O:0.78, C:0.80, E:0.40, A:0.45, N:0.52 }, styles:['Animalier','Monumentaal','Wild'],
+    insight:'Cain erfde Barye\'s dramatiek maar schreef die in steen en brons in de publieke ruimte. Zijn monumentale wilde dieren bewaken nog steeds Franse parken — zonder dat iemand nog weet wie ze maakte.' },
+  { id:'huntington',   name:'Huntington',  fullname:'Anna Hyatt Huntington',emoji:'🐎', color:'#C08060', period:'1876–1973',
+    profile:{ O:0.75, C:0.92, E:0.38, A:0.60, N:0.35 }, styles:['Animalier','Anatomie','Paarden'],
+    insight:'Huntington combineerde wetenschappelijke precisie met artistieke beheersing. Haar paardenbeelden zijn het bewijs dat anatomie geen vijand van schoonheid is — het is de fundering ervan.' },
+  { id:'manship',      name:'Manship',     fullname:'Paul Manship',         emoji:'🔱', color:'#D4B040', period:'1885–1966',
+    profile:{ O:0.78, C:0.82, E:0.62, A:0.55, N:0.32 }, styles:['Art Deco','Gestileerd','Mythologie'],
+    insight:'Manship verbond de klassieke oudheid met Art Deco-elegantie. Zijn Prometheus bij Rockefeller Center is geen mythologie — het is een statement over moderniteit die haar wortels niet vergeet.' },
+  { id:'landseer',     name:'Landseer',    fullname:'Sir Edwin Landseer',   emoji:'🏛️', color:'#907030', period:'1802–1873',
+    profile:{ O:0.70, C:0.78, E:0.55, A:0.72, N:0.45 }, styles:['Animalier','Romantisme','Monument'],
+    insight:'Landseer maakte dieren menselijk — niet als sentimentaliteit maar als empathie. De leeuwen op Trafalgar Square zijn zijn meest permanente argument: kracht hoeft niet te schreeuwen.' },
+  { id:'wolff',        name:'Wolff',       fullname:'Wilhelm Wolff',        emoji:'🐆', color:'#806040', period:'1816–1887',
+    profile:{ O:0.80, C:0.78, E:0.32, A:0.40, N:0.60 }, styles:['Animalier','Dramatisch','Expressie'],
+    insight:'Wolff zag roofdieren als expressie van oerkracht — niet als natuur maar als taal. Zijn dramatische beelden zijn Barye\'s erfenis vertaald naar de Duitse intensiteit.' },
+  { id:'sandoz',       name:'Sandoz',      fullname:'Édouard-Marcel Sandoz', emoji:'🦆', color:'#90C0A0', period:'1881–1971',
+    profile:{ O:0.85, C:0.75, E:0.52, A:0.72, N:0.32 }, styles:['Animalier','Gestileerd','Humor'],
+    insight:'Sandoz begreep iets wat weinig beeldhouwers begrijpen: humor is een vorm van precisie. Zijn gestileerde dieren zijn niet minder serieus — ze zijn serieuzer, omdat ze weten hoe ze moeten lachen.' },
+  { id:'kirchner',     name:'Kirchner',    fullname:'Ernst Ludwig Kirchner', emoji:'🏙️', color:'#C04828', period:'1880–1938',
+    profile:{ O:0.88, C:0.38, E:0.55, A:0.32, N:0.82 }, styles:['Expressionisme','Stadsgezicht','Angst'],
+    insight:'Kirchner schilderde Berlijn niet zoals het eruitzag maar zoals het voelde — scherp, hoekig, eenzaam in de menigte. Zijn werk is de anatomie van stedelijke angst.' },
+  { id:'schmidtrottluff', name:'Schmidt-Rottluff', fullname:'Karl Schmidt-Rottluff', emoji:'🪨', color:'#D05020', period:'1884–1976',
+    profile:{ O:0.85, C:0.42, E:0.35, A:0.38, N:0.65 }, styles:['Expressionisme','Krachtig','Kleur'],
+    insight:'Schmidt-Rottluff gebruikte kleur als sloopkogel. Geen menging, geen overgang — alleen de klap van de vorm. Zijn werk vraagt geen interpretatie, het eist een reactie.' },
+  { id:'heckel',       name:'Heckel',      fullname:'Erich Heckel',          emoji:'🌲', color:'#708060', period:'1883–1970',
+    profile:{ O:0.82, C:0.55, E:0.30, A:0.45, N:0.72 }, styles:['Expressionisme','Houtsnede','Melancholie'],
+    insight:'Heckel sneed zijn melancholie letterlijk uit hout. Zijn landschappen zijn geen natuur — ze zijn stemming die een landschap heeft aangenomen.' },
+  { id:'nolde',        name:'Nolde',       fullname:'Emil Nolde',            emoji:'🌺', color:'#D06030', period:'1867–1956',
+    profile:{ O:0.92, C:0.35, E:0.42, A:0.48, N:0.70 }, styles:['Expressionisme','Kleur','Religieus'],
+    insight:'Nolde liet kleur branden. Zijn religieuze taferelen zijn niet devoot — ze zijn bezeten. De bloemen ook. Alles bij Nolde staat in vlammen, ook als het stilstaat.' },
+  { id:'pechstein',    name:'Pechstein',   fullname:'Max Pechstein',         emoji:'🌴', color:'#C07840', period:'1881–1955',
+    profile:{ O:0.85, C:0.52, E:0.62, A:0.65, N:0.48 }, styles:['Expressionisme','Decoratief','Exotisch'],
+    insight:'Pechstein zocht de essentie van het menselijke buiten Europa — en bracht die terug als kleur. Zijn werk is het meest toegankelijke van Die Brücke, wat hem zowel geliefd als onderschat maakt.' },
+  { id:'franzmarc',    name:'F. Marc',     fullname:'Franz Marc',            emoji:'💙', color:'#4070C0', period:'1880–1916',
+    profile:{ O:0.92, C:0.62, E:0.45, A:0.68, N:0.55 }, styles:['Expressionisme','Symbolisch','Dieren'],
+    insight:'Marc geloofde dat blauw de kleur van het spirituele was — en dat dieren dichter bij de waarheid stonden dan mensen. Hij stierf op 36 bij Verdun, voordat hij kon bewijzen of hij gelijk had.' },
+  { id:'macke',        name:'Macke',       fullname:'August Macke',          emoji:'☀️', color:'#E09030', period:'1887–1914',
+    profile:{ O:0.88, C:0.55, E:0.72, A:0.72, N:0.42 }, styles:['Expressionisme','Licht','Fauvisme'],
+    insight:'Macke was de lichtste stem van Der Blaue Reiter — niet oppervlakkig, maar oprecht vrolijk. Hij stierf op 27 in de eerste weken van de oorlog. Het verlies is voelbaar in elk werk dat er niet meer is.' },
+  { id:'munter',       name:'Münter',      fullname:'Gabriele Münter',       emoji:'🖼️', color:'#C0A040', period:'1877–1962',
+    profile:{ O:0.82, C:0.68, E:0.48, A:0.65, N:0.52 }, styles:['Expressionisme','Omlijning','Portret'],
+    insight:'Münter tekende grenzen — letterlijk, met krachtige contouren. Haar werk is helder waar anderen dramatisch zijn. Ze overleefde Kandinsky, de oorlog en de vergetelheid. Het werk ook.' },
+  { id:'beckmann',     name:'Beckmann',    fullname:'Max Beckmann',          emoji:'🎭', color:'#5060A0', period:'1884–1950',
+    profile:{ O:0.88, C:0.65, E:0.42, A:0.35, N:0.78 }, styles:['Expressionisme','Allegorie','Neue Sachlichkeit'],
+    insight:'Beckmann maakte geen schilderijen maar rechtszaken. Zijn allegorieën zijn aanklachten — tegen de tijd, tegen de mens, tegen zichzelf. Hij vluchtte voor de nazi\'s en bleef schilderen alsof zijn leven ervan afhing.' },
+  { id:'monet',        name:'Monet',       fullname:'Claude Monet',          emoji:'💧', color:'#60A0C0', period:'1840–1926',
+    profile:{ O:0.85, C:0.72, E:0.45, A:0.65, N:0.42 }, styles:['Impressionisme','Licht','Natuur'],
+    insight:'Monet schilderde niet het ding maar het moment — het licht op het water, niet het water. Zijn waterlelies zijn geen bloemen; ze zijn tijd die stilstaat.' },
+  { id:'renoir',       name:'Renoir',      fullname:'Pierre-Auguste Renoir', emoji:'🥂', color:'#E8A070', period:'1841–1919',
+    profile:{ O:0.82, C:0.65, E:0.78, A:0.85, N:0.32 }, styles:['Impressionisme','Vreugde','Portret'],
+    insight:'Renoir schilderde geluk — niet als illusie maar als keuze. Zijn werk is geen ontkenning van de werkelijkheid; het is een argument dat schoonheid erin bestaat.' },
+  { id:'degas',        name:'Degas',       fullname:'Edgar Degas',           emoji:'🩰', color:'#B080C0', period:'1834–1917',
+    profile:{ O:0.85, C:0.80, E:0.42, A:0.38, N:0.60 }, styles:['Impressionisme','Beweging','Compositie'],
+    insight:'Degas toonde mensen op het moment dat ze niet keken. Zijn ballerina\'s poseren niet — ze oefenen, wachten, zijn moe. Dat eerlijke oog is zijn kracht en zijn kilheid tegelijk.' },
+  { id:'pissarro',     name:'Pissarro',    fullname:'Camille Pissarro',      emoji:'🌾', color:'#80A060', period:'1830–1903',
+    profile:{ O:0.80, C:0.70, E:0.55, A:0.78, N:0.42 }, styles:['Impressionisme','Landschap','Platteland'],
+    insight:'Pissarro was de enige die met iedereen exposeerde — de impressionisten, de pointillisten, de jongeren. Hij was geen stijl maar een houding: nieuwsgierigheid zonder territorium.' },
+  { id:'manet',        name:'Manet',       fullname:'Édouard Manet',         emoji:'🎩', color:'#708090', period:'1832–1883',
+    profile:{ O:0.85, C:0.62, E:0.65, A:0.48, N:0.58 }, styles:['Impressionisme','Modern Leven','Provocatie'],
+    insight:'Manet exposeerde nooit officieel mee, maar zonder hem bestaat de beweging niet. Hij was te vroeg voor zijn tijd en wist het — dat maakt zijn werk nog steeds ongemakkelijk.' },
+  { id:'morisot',      name:'Morisot',     fullname:'Berthe Morisot',        emoji:'🤍', color:'#C0A8B8', period:'1841–1895',
+    profile:{ O:0.78, C:0.72, E:0.42, A:0.75, N:0.48 }, styles:['Impressionisme','Interieur','Elegantie'],
+    insight:'Morisot schilderde de wereld die vrouwen toebehoorde — het interieur, het kind, de tuin — en maakte die wereld groot. Haar elegantie is geen beperking; het is een standpunt.' },
+  { id:'sisley',       name:'Sisley',      fullname:'Alfred Sisley',         emoji:'🌊', color:'#90B8C8', period:'1839–1899',
+    profile:{ O:0.75, C:0.70, E:0.28, A:0.58, N:0.45 }, styles:['Impressionisme','Landschap','Licht'],
+    insight:'Sisley schilderde lucht en water — niet als decor maar als onderwerp. Hij is de stilste impressionist en daardoor de meest meditatieve. Zijn werk vraagt niets, geeft alles.' },
+  { id:'caillebotte',  name:'Caillebotte', fullname:'Gustave Caillebotte',   emoji:'🌧️', color:'#607090', period:'1848–1894',
+    profile:{ O:0.80, C:0.82, E:0.55, A:0.58, N:0.42 }, styles:['Impressionisme','Realisme','Perspectief'],
+    insight:'Caillebotte keek van bovenaf, van onderaf, van opzij — elk perspectief behalve het verwachte. Zijn Rue de Paris is geen schilderij maar een architectonische ervaring.' },
+  { id:'cassatt',      name:'Cassatt',     fullname:'Mary Cassatt',          emoji:'👶', color:'#D0A8B0', period:'1844–1926',
+    profile:{ O:0.78, C:0.75, E:0.45, A:0.82, N:0.40 }, styles:['Impressionisme','Portret','Moeder & Kind'],
+    insight:'Cassatt reisde van Amerika naar Parijs om te schilderen wat niemand anders serieus nam: de intimiteit tussen moeder en kind. Ze maakte het universeel.' },
+  { id:'bazille',      name:'Bazille',     fullname:'Frédéric Bazille',      emoji:'🌻', color:'#A0C080', period:'1841–1870',
+    profile:{ O:0.82, C:0.68, E:0.58, A:0.68, N:0.48 }, styles:['Impressionisme','Buitenlicht','Figuur'],
+    insight:'Bazille stierf op 28 in de Frans-Duitse Oorlog. Wat hij achterliet suggereert wat er had kunnen zijn — en dat maakt elk schilderij zwaarder dan het eruitziet.' },
+];
+
+const B5_META = [
+  { id:'O', name:'Openheid',          color:'#a070e0' },
+  { id:'C', name:'Consciëntieusheid', color:'#70b0e0' },
+  { id:'E', name:'Extraversie',       color:'#e0a040' },
+  { id:'A', name:'Vriendelijkheid',   color:'#70d090' },
+  { id:'N', name:'Neuroticisme',      color:'#e06060' },
+];
+
+const AXES = [
+  { dim1:'O', dim2:'N', l1l:'← Gesloten', l1r:'Openheid →',      l2t:'Emotioneel ↑', l2b:'↓ Stabiel',   desc:'Openheid × Neuroticisme' },
+  { dim1:'O', dim2:'E', l1l:'← Gesloten', l1r:'Openheid →',      l2t:'Extravert ↑',  l2b:'↓ Introvert', desc:'Openheid × Extraversie' },
+  { dim1:'C', dim2:'E', l1l:'← Impulsief',l1r:'Discipline →',    l2t:'Extravert ↑',  l2b:'↓ Introvert', desc:'Consciëntieusheid × Extraversie' },
+  { dim1:'O', dim2:'C', l1l:'← Gesloten', l1r:'Openheid →',      l2t:'Discipline ↑', l2b:'↓ Impulsief', desc:'Openheid × Consciëntieusheid' },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// SIMILARITY
+// ═══════════════════════════════════════════════════════════════
+const SIM_THRESH = 0.245;
+
+function dist5D(profA, profB) {
+  const dims = ['O','C','E','A','N'];
+  let s = 0;
+  dims.forEach(d => s += (profA[d] - profB[d]) ** 2);
+  return Math.sqrt(s / dims.length);
+}
+
+// Pre-compute artist-artist connections
+const CONNS = [];
+for (let i = 0; i < ARTISTS.length; i++)
+  for (let j = i+1; j < ARTISTS.length; j++) {
+    const d = dist5D(ARTISTS[i].profile, ARTISTS[j].profile);
+    if (d < SIM_THRESH) CONNS.push({ a: ARTISTS[i].id, b: ARTISTS[j].id, d });
+  }
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let currentAxis  = 0;
+let selectedId   = null;
+let buyerProfile = null;   // { O,C,E,A,N } or null
+let buyerPos     = { cx:-1, cy:-1, tx:0, ty:0 };
+
+let W, H;
+const PAD  = 52;
+const WRAP = document.getElementById('canvasWrap');
+const cv   = document.getElementById('cv');
+const ctx  = cv.getContext('2d');
+
+const pos = {};
+ARTISTS.forEach(a => { pos[a.id] = { cx:-1, cy:-1, tx:0, ty:0 }; });
+
+let animId = null;
+
+// ═══════════════════════════════════════════════════════════════
+// KOPER ANALYSE
+// ═══════════════════════════════════════════════════════════════
+function analyseKoper() {
+  const text = document.getElementById('kopertxt').value.trim();
+  if (!text) return;
+
+  const lower = text.toLowerCase();
+  const words  = lower.split(/[\s,\.;:\!\?\-\/\(\)\"\']+/).filter(Boolean);
+
+  const hits  = { O:{high:0,low:0}, C:{high:0,low:0}, E:{high:0,low:0}, A:{high:0,low:0}, N:{high:0,low:0} };
+  const found = [];
+
+  words.forEach(word => {
+    for (const dim of ['O','C','E','A','N'])
+      for (const dir of ['high','low'])
+        if (LEXICON[dim][dir].some(kw =>
+          word === kw || word.includes(kw) || (kw.includes(word) && word.length > 3))) {
+          hits[dim][dir]++;
+          if (!found.find(f => f.word === word && f.dim === dim))
+            found.push({ word, dim, dir });
+        }
+  });
+
+  const sc = { ...B5_DEF };
+  for (const dim of ['O','C','E','A','N']) {
+    const h = hits[dim].high, l = hits[dim].low, total = h + l;
+    if (total > 0) {
+      const ratio    = h / total;
+      const strength = Math.min(1, total * 0.15);
+      sc[dim] = Math.max(0.08, Math.min(0.97, B5_DEF[dim] + strength * (ratio - 0.5) * 1.4));
+    }
+  }
+
+  buyerProfile = sc;
+  updateBuyerTarget();
+  renderB5Panel(sc, found);
+  renderSigChips(found);
+  renderMatches();
+
+  if (animId) cancelAnimationFrame(animId);
+  animId = requestAnimationFrame(animate);
+}
+
+function clearKoper() {
+  document.getElementById('kopertxt').value = '';
+  document.getElementById('sigRow').innerHTML = '';
+  document.getElementById('b5Content').innerHTML =
+    '<div class="no-analysis">Typ een beschrijving en klik Analyseer →<br>De koper verschijnt als ★ in het universum.</div>';
+  document.getElementById('matchPanel').classList.remove('visible');
+  buyerProfile = null;
+  if (!animId) draw();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUYER CANVAS POSITION
+// ═══════════════════════════════════════════════════════════════
+function updateBuyerTarget() {
+  if (!buyerProfile) return;
+  const ax = AXES[currentAxis];
+  const cw = W - PAD*2, ch = H - PAD*2;
+  buyerPos.tx = PAD + buyerProfile[ax.dim1] * cw;
+  buyerPos.ty = PAD + (1 - buyerProfile[ax.dim2]) * ch;
+  if (buyerPos.cx < 0) { buyerPos.cx = buyerPos.tx; buyerPos.cy = buyerPos.ty; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// B5 PANEL
+// ═══════════════════════════════════════════════════════════════
+function renderB5Panel(sc, found) {
+  const total = found.length;
+  const conf  = Math.min(100, Math.round(total * 7 + 10));
+
+  const personas = [
+    { test:s=>s.O>0.78&&s.E<0.45, name:'De Stille Vernieuwer' },
+    { test:s=>s.O>0.78&&s.E>0.62, name:'De Creatieve Bruggenbouwer' },
+    { test:s=>s.O>0.65&&s.N>0.60, name:'De Gevoelige Denker' },
+    { test:s=>s.C>0.75&&s.O<0.55, name:'De Precisiemethodewerker' },
+    { test:s=>s.C>0.70&&s.A>0.65, name:'De Betrouwbare Verzorger' },
+    { test:s=>s.A>0.70&&s.E>0.60, name:'De Warme Verbinder' },
+    { test:s=>s.N>0.65&&s.O>0.65, name:'De Intense Kunstzinnige Geest' },
+    { test:s=>s.E<0.38&&s.C>0.68, name:'De Reflectieve Vakman' },
+    { test:()=>true,               name:'Het Veelzijdige Profiel' },
+  ];
+  const persona = personas.find(p => p.test(sc));
+
+  const barsHtml = ['O','C','E','A','N'].map(dim => {
+    const m = B5_META.find(b => b.id === dim);
+    const v = Math.round(sc[dim] * 100);
+    return `<div class="b5-row">
+      <div class="b5-head">
+        <span class="b5-name">${m.name}</span>
+        <span class="b5-val" style="color:${m.color}">${v}</span>
+      </div>
+      <div class="b5-track">
+        <div class="b5-fill" style="width:${v}%;background:${m.color}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('b5Content').innerHTML = `
+    <div class="ptitle">Gedetecteerd Profiel</div>
+    <div class="persona-name">${persona.name}</div>
+    <div class="conf-tag">${total} signalen · betrouwbaarheid ${conf}%</div>
+    <div class="ptitle">Big Five</div>
+    ${barsHtml}`;
+}
+
+function renderSigChips(found) {
+  const DIM_COL = { O:'#c090ff', C:'#80c0ff', E:'#ffc060', A:'#80e0a0', N:'#ff8080' };
+  const unique = [...new Map(found.map(f => [f.word+f.dim, f])).values()].slice(0, 18);
+  document.getElementById('sigRow').innerHTML = unique.map(({ word, dim, dir }) => {
+    const col = DIM_COL[dim];
+    return `<span class="sig-chip" style="color:${col};border-color:${col}40;background:${col}18">
+      ${word} <span style="opacity:0.5">${dim}${dir==='high'?'↑':'↓'}</span></span>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATCH PANEL
+// ═══════════════════════════════════════════════════════════════
+function getBuyerMatches() {
+  if (!buyerProfile) return [];
+  return ARTISTS
+    .map(a => ({ ...a, d: dist5D(buyerProfile, a.profile) }))
+    .sort((x, y) => x.d - y.d);
+}
+
+function matchPct(d) {
+  return Math.max(0, Math.round((1 - d / 0.55) * 100));
+}
+
+function renderMatches() {
+  const panel   = document.getElementById('matchPanel');
+  const matches = getBuyerMatches();
+  if (!matches.length) { panel.classList.remove('visible'); return; }
+
+  const top5 = matches.slice(0, 5);
+  const cardsHtml = top5.map((m, i) => {
+    const pct   = matchPct(m.d);
+    const isTop = i === 0;
+    return `<div class="match-card${isTop?' top':''}" onclick="selectById('${m.id}')">
+      <div class="mc-rank" style="${isTop?'color:#c8a060':''}">${isTop?'★ #1':'#'+(i+1)}</div>
+      <div class="mc-emoji">${m.emoji}</div>
+      <div class="mc-name" style="color:${m.color}">${m.name}</div>
+      <div class="mc-styles">${m.styles.slice(0,2).join(' · ')}</div>
+      <div class="mc-track"><div class="mc-fill" style="width:${pct}%;background:${m.color}"></div></div>
+      <div class="mc-pct" style="color:${m.color}">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="match-title">★ Kunstenaarsmatch voor deze koper</div>
+    <div class="match-grid">${cardsHtml}</div>
+    <div class="match-insight">${top5[0].insight}</div>`;
+  panel.classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CANVAS LAYOUT
+// ═══════════════════════════════════════════════════════════════
+function resize() {
+  const dpr  = window.devicePixelRatio || 1;
+  const maxW = Math.round(screen.width / dpr);
+  W = Math.min(WRAP.offsetWidth, maxW);
+  H = Math.round(W * 0.58);
+  cv.width  = W; cv.height  = H;
+  cv.style.width  = W + 'px';
+  cv.style.height = H + 'px';
+  updateTargets(true);
+  updateBuyerTarget();
+  if (!animId) draw();
+}
+
+function getCanvasPos(profile, axIdx) {
+  const ax = AXES[axIdx];
+  const cw = W - PAD*2, ch = H - PAD*2;
+  return {
+    x: PAD + profile[ax.dim1] * cw,
+    y: PAD + (1 - profile[ax.dim2]) * ch,
+  };
+}
+
+function updateTargets(snap = false) {
+  ARTISTS.forEach(a => {
+    const p = getCanvasPos(a.profile, currentAxis);
+    pos[a.id].tx = p.x;
+    pos[a.id].ty = p.y;
+    if (snap || pos[a.id].cx < 0) { pos[a.id].cx = p.x; pos[a.id].cy = p.y; }
+  });
+  if (buyerProfile) updateBuyerTarget();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANIMATION
+// ═══════════════════════════════════════════════════════════════
+function animate() {
+  let moving = false;
+  const lerp = (cur, tgt) => {
+    const d = tgt - cur;
+    if (Math.abs(d) > 0.25) { moving = true; return cur + d * 0.13; }
+    return tgt;
+  };
+  ARTISTS.forEach(a => {
+    pos[a.id].cx = lerp(pos[a.id].cx, pos[a.id].tx);
+    pos[a.id].cy = lerp(pos[a.id].cy, pos[a.id].ty);
+  });
+  if (buyerProfile) {
+    buyerPos.cx = lerp(buyerPos.cx, buyerPos.tx);
+    buyerPos.cy = lerp(buyerPos.cy, buyerPos.ty);
+  }
+  draw();
+  animId = moving ? requestAnimationFrame(animate) : null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DRAW
+// ═══════════════════════════════════════════════════════════════
+function drawStar(cx, cy, points, outerR, innerR, color) {
+  ctx.beginPath();
+  for (let i = 0; i < points*2; i++) {
+    const r = i%2===0 ? outerR : innerR;
+    const a = (i * Math.PI/points) - Math.PI/2;
+    i === 0 ? ctx.moveTo(cx + r*Math.cos(a), cy + r*Math.sin(a))
+             : ctx.lineTo(cx + r*Math.cos(a), cy + r*Math.sin(a));
+  }
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const cw = W - PAD*2, ch = H - PAD*2;
+  const ax = AXES[currentAxis];
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.032)';
+  ctx.lineWidth = 1;
+  for (let i=1; i<=4; i++) {
+    const gx=PAD+cw*i/4, gy=PAD+ch*i/4;
+    ctx.beginPath(); ctx.moveTo(gx,PAD); ctx.lineTo(gx,PAD+ch); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PAD,gy); ctx.lineTo(PAD+cw,gy); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle='rgba(255,255,255,0.10)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(PAD,PAD+ch/2); ctx.lineTo(PAD+cw,PAD+ch/2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAD+cw/2,PAD); ctx.lineTo(PAD+cw/2,PAD+ch); ctx.stroke();
+
+  // Axis labels
+  ctx.font='500 8.5px Segoe UI,system-ui'; ctx.fillStyle='rgba(255,255,255,0.15)';
+  ctx.textAlign='left';  ctx.fillText(ax.l1l, PAD+5, PAD+ch/2-7);
+  ctx.textAlign='right'; ctx.fillText(ax.l1r, PAD+cw-5, PAD+ch/2-7);
+  ctx.textAlign='center';
+  ctx.fillText(ax.l2t, PAD+cw/2, PAD+13);
+  ctx.fillText(ax.l2b, PAD+cw/2, PAD+ch-4);
+
+  // Artist-artist connections
+  CONNS.forEach(conn => {
+    const pa=pos[conn.a], pb=pos[conn.b];
+    const hi = conn.a===selectedId || conn.b===selectedId;
+    const st = 1 - conn.d/SIM_THRESH;
+    ctx.strokeStyle = hi ? ARTISTS.find(a=>a.id===conn.a).color : '#7090B0';
+    ctx.globalAlpha = hi ? st*0.65 : st*0.12;
+    ctx.lineWidth   = hi ? 1.8 : 0.8;
+    ctx.beginPath(); ctx.moveTo(pa.cx,pa.cy); ctx.lineTo(pb.cx,pb.cy); ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+
+  // Buyer → artist lines (top 3)
+  if (buyerProfile && buyerPos.cx >= 0) {
+    const matches = getBuyerMatches().slice(0,3);
+    const alphas  = [0.75, 0.50, 0.30];
+    const widths  = [2.0, 1.5, 1.0];
+    ctx.setLineDash([7, 4]);
+    matches.forEach((m, i) => {
+      const ap = pos[m.id];
+      ctx.strokeStyle = '#e8c040';
+      ctx.globalAlpha = alphas[i];
+      ctx.lineWidth   = widths[i];
+      ctx.beginPath(); ctx.moveTo(buyerPos.cx, buyerPos.cy); ctx.lineTo(ap.cx, ap.cy); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+
+  // Artist glows
+  ARTISTS.forEach(a => {
+    const p = pos[a.id], isSel = a.id===selectedId;
+    const r = isSel ? 17 : 10;
+    const g = ctx.createRadialGradient(p.cx,p.cy,0,p.cx,p.cy,r*3);
+    g.addColorStop(0, a.color+(isSel?'55':'28'));
+    g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(p.cx,p.cy,r*3,0,Math.PI*2); ctx.fill();
+  });
+
+  // Artist dots + labels
+  ARTISTS.forEach(a => {
+    const p = pos[a.id], isSel = a.id===selectedId;
+    const r = isSel ? 17 : 10;
+    const isMatch = buyerProfile && getBuyerMatches().slice(0,3).some(m=>m.id===a.id);
+
+    ctx.fillStyle   = a.color;
+    ctx.globalAlpha = isSel ? 1 : (isMatch ? 1 : 0.78);
+    ctx.beginPath(); ctx.arc(p.cx,p.cy,r,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle='rgba(255,255,255,0.28)';
+    ctx.beginPath(); ctx.arc(p.cx-r*.28,p.cy-r*.30,r*.28,0,Math.PI*2); ctx.fill();
+
+    const fontSize = isSel ? 11 : 9.5;
+    ctx.font = isSel ? `bold ${fontSize}px Segoe UI` : `${fontSize}px Segoe UI`;
+    const label = a.emoji + ' ' + a.name;
+    const lw    = ctx.measureText(label).width;
+    const rx    = p.cx + r + 5;
+    const flip  = rx + lw > W - PAD*.4;
+    const lx    = flip ? p.cx - r - 5 : rx;
+    ctx.textAlign = flip ? 'right' : 'left';
+    ctx.fillStyle = 'rgba(6,9,18,0.75)';
+    ctx.fillText(label, lx+1, p.cy+4+1);
+    ctx.fillStyle = isSel ? a.color : (isMatch ? '#e8d090' : 'rgba(155,175,195,0.80)');
+    ctx.fillText(label, lx, p.cy+4);
+  });
+
+  // Buyer star
+  if (buyerProfile && buyerPos.cx >= 0) {
+    const bx = buyerPos.cx, by = buyerPos.cy;
+
+    // Glow
+    const gg = ctx.createRadialGradient(bx,by,0,bx,by,48);
+    gg.addColorStop(0,'rgba(232,192,64,0.45)');
+    gg.addColorStop(1,'transparent');
+    ctx.fillStyle=gg;
+    ctx.beginPath(); ctx.arc(bx,by,48,0,Math.PI*2); ctx.fill();
+
+    // Star
+    drawStar(bx, by, 5, 15, 6, '#e8c040');
+
+    // Label
+    ctx.font='bold 10.5px Segoe UI'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(6,9,18,0.8)';
+    ctx.fillText('★ Koper', bx+1, by-21);
+    ctx.fillStyle='#e8c040';
+    ctx.fillText('★ Koper', bx, by-22);
+  }
+
+  ctx.textAlign='left';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INTERACTION
+// ═══════════════════════════════════════════════════════════════
+cv.addEventListener('click', e => {
+  const rect=cv.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let nearest=null, minD=26;
+  ARTISTS.forEach(a => {
+    const p=pos[a.id];
+    const d=Math.sqrt((mx-p.cx)**2+(my-p.cy)**2);
+    if(d<minD){nearest=a;minD=d;}
+  });
+  selectedId = nearest ? nearest.id : null;
+  renderDetail(nearest);
+  if(!animId) draw();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ARTIST DETAIL
+// ═══════════════════════════════════════════════════════════════
+function renderDetail(artist) {
+  const panel=document.getElementById('detail');
+  if(!artist){panel.classList.remove('visible');return;}
+
+  const b5html=['O','C','E','A','N'].map(dim=>{
+    const m=B5_META.find(b=>b.id===dim);
+    const v=Math.round(artist.profile[dim]*100);
+    const buyV = buyerProfile ? Math.round(buyerProfile[dim]*100) : null;
+    return `<div class="b5r">
+      <div class="b5r-label">
+        <span style="color:#4A6070">${m.name}</span>
+        <span style="color:${m.color};font-family:monospace;font-size:0.6rem;font-weight:700">${v}${buyV!==null?` <span style="color:#c8a060;opacity:0.7">/ jij ${buyV}</span>`:''}</span>
+      </div>
+      <div class="b5r-track"><div class="b5r-fill" style="width:${v}%;background:${m.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  const similar=ARTISTS.filter(a=>a.id!==artist.id)
+    .map(a=>({a,d:dist5D(artist.profile,a.profile)}))
+    .sort((x,y)=>x.d-y.d).slice(0,4);
+
+  const buyerMatchHtml = buyerProfile ? (() => {
+    const d = dist5D(buyerProfile, artist.profile);
+    const pct = matchPct(d);
+    return `<div style="margin-top:0.8rem;padding:0.5rem 0.6rem;border-radius:6px;background:rgba(232,192,64,0.08);border:1px solid rgba(232,192,64,0.25)">
+      <div style="font-size:0.57rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#c8a060;margin-bottom:0.2rem">Match met koper</div>
+      <div style="font-size:1rem;font-weight:800;color:#e8c040">${pct}%</div>
+    </div>`;
+  })() : '';
+
+  panel.innerHTML=`
+    <div class="det-header">
+      <div class="det-emoji">${artist.emoji}</div>
+      <div>
+        <div class="det-name" style="color:${artist.color}">${artist.fullname}</div>
+        <div class="det-period">${artist.period}</div>
+        <div class="det-styles">${artist.styles.map(s=>`<span class="det-style">${s}</span>`).join('')}</div>
+      </div>
+    </div>
+    <div class="det-body">
+      <div class="det-section">
+        <h4>Big Five${buyerProfile?' (/ koper)':''}</h4>
+        ${b5html}
+        ${buyerMatchHtml}
+      </div>
+      <div class="det-section">
+        <h4>Meest verwant</h4>
+        ${similar.map(({a,d})=>`
+          <div class="sim-row" onclick="selectById('${a.id}')">
+            <span style="font-size:0.95rem">${a.emoji}</span>
+            <span style="font-size:0.68rem;flex:1;color:${a.color}">${a.name}</span>
+            <span style="font-size:0.6rem;font-family:monospace;font-weight:700;color:${a.color}">${Math.max(0,Math.round((1-d/0.55)*100))}%</span>
+          </div>`).join('')}
+      </div>
+      <div class="det-section">
+        <h4>Curatorsinzicht</h4>
+        <div class="insight-text">${artist.insight}</div>
+      </div>
+    </div>`;
+  panel.classList.add('visible');
+}
+
+function selectById(id) {
+  selectedId=id;
+  renderDetail(ARTISTS.find(a=>a.id===id));
+  if(!animId) draw();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AXIS + LEGEND
+// ═══════════════════════════════════════════════════════════════
+function setAxis(i) {
+  currentAxis=i;
+  document.querySelectorAll('.axis-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  document.getElementById('axisDesc').textContent=AXES[i].desc;
+  updateTargets(false);
+  if(buyerProfile) updateBuyerTarget();
+  if(animId) cancelAnimationFrame(animId);
+  animId=requestAnimationFrame(animate);
+}
+
+function renderLegend() {
+  document.getElementById('legend').innerHTML=ARTISTS.map(a=>`
+    <div class="leg-item" onclick="selectById('${a.id}')">
+      <div class="leg-dot" style="background:${a.color}"></div>
+      <span>${a.emoji} ${a.name}</span>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  const dpr=window.devicePixelRatio||1;
+  const maxW=Math.round(screen.width/dpr);
+  W=Math.min(WRAP.offsetWidth,maxW); H=Math.round(W*.58);
+  cv.width=W; cv.height=H;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  updateTargets(true);
+  if(!animId) draw();
+});
+
+renderLegend();
+resize();
+</script>
+</body>
+</html>
