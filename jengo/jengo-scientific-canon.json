@@ -1,0 +1,191 @@
+﻿{
+    "meta":  {
+                 "naam":  "Jengo Scientific Canon",
+                 "versie":  "1.0",
+                 "bijgewerkt":  "2026-04-02",
+                 "auteurs":  [
+                                 "Sjoerd Schepman",
+                                 "Martien de Jong"
+                             ],
+                 "doel":  "Wetenschappelijk gefundeerde Canon-entries die Jengo\u0027s F-laag, Q-laag en Ouroboros operationeel sturen",
+                 "falsificatieconditie":  "Als SCP per geldige propositie niet minder energie verbruikt dan een equivalent LLM-systeem, houdt de wet niet"
+             },
+    "canon":  [
+                  {
+                      "id":  "C-ENERGIE-001",
+                      "naam":  "Wet van Schepman — Energieefficiëntie",
+                      "claim":  "Meer vermogen zonder betere architectuur levert noch efficiëntie noch effectiviteit",
+                      "formule":  "ECU = Etotal / Pvalid  |  R = 1 - (Tokens_functioneel / Tokens_totaal)",
+                      "bronnen":  [
+                                      "NIST: 20W brein vs 20MW Frontier supercomputer — factor 1.000.000",
+                                      "Rao et al. 2022 (Intel/HBP): 16-fold energiereductie neuromorfe hardware (Intel Loihi chip)",
+                                      "Raichle et al. 2001: brein herverdeelt vast energiebudget — schaalt niet op bij zware taak"
+                                  ],
+                      "status":  "VERIFIED",
+                      "confidence":  0.92,
+                      "laag":  "Q",
+                      "beslisregel":  "Als input claimt dat schaalvergroting zonder architectuurwijziging efficiëntie oplevert → BLACKLIST",
+                      "blacklist_triggers":  [
+                                                 "meer parameters leidt tot intelligentie",
+                                                 "groter model is beter",
+                                                 "meer compute geeft begrip",
+                                                 "schalen lost het op"
+                                             ]
+                  },
+                  {
+                      "id":  "C-FILTER-001",
+                      "naam":  "F-laag als primair energiebesparingsmechanisme",
+                      "claim":  "Filteren vóór verwerking bespaart meer energie dan filteren ná verwerking",
+                      "bronnen":  [
+                                      "Overprikkeling: geen filter = uitputting door overbodige informatieverwerking",
+                                      "GABA-inhibitie: biologisch remmechanisme blokkeert pre-synaptisch — niet post",
+                                      "Vroon: reptielenbrein = automatisch, pre-logisch, niet te redeneren"
+                                  ],
+                      "status":  "VERIFIED",
+                      "confidence":  0.94,
+                      "laag":  "F",
+                      "beslisregel":  "F-laag blokkeert vóór O-laag verwerking — geen waarschuwing, harde blokkade. F-laag heeft geen energiebudget nodig: het elimineert verbruik vóór allocatie.",
+                      "blacklist_triggers":  [
+
+                                             ]
+                  },
+                  {
+                      "id":  "C-PRIORITEIT-001",
+                      "naam":  "Selfish Brain — Q-laag hiërarchische prioriteit",
+                      "claim":  "Beslissingslaag claimt energiebudget vóór alle andere lagen, ook ten koste van lagere lagen",
+                      "bronnen":  [
+                                      "Selfish Brain theorie: hersenen claimen energie ten koste van andere organen bij schaarste",
+                                      "Raichle et al. 2001: energieredistributie — actieve gebieden krijgen voorrang, andere dimmen"
+                                  ],
+                      "status":  "VERIFIED",
+                      "confidence":  0.91,
+                      "laag":  "Q",
+                      "beslisregel":  "Budgetprioriteit: Q \u003e M \u003e B \u003e L \u003e O \u003e S. F-laag heeft geen budget — elimineert vóór allocatie.",
+                      "blacklist_triggers":  [
+
+                                             ]
+                  },
+                  {
+                      "id":  "C-OUROBOROS-001",
+                      "naam":  "Interne Ouroboros — zelfversterking vereist",
+                      "claim":  "Interne consolidatielus is even belangrijk als externe feedback voor identiteitsvorming",
+                      "bronnen":  [
+                                      "Klinger 1990: helft wakend leven = daydreaming = interne reward-simulatie",
+                                      "Skinner weerlegd: interne omgeving even zwaar als externe voor gedragsvorming",
+                                      "Default Mode Network: actief bij rust, bouwt identiteit op via zelfversterking"
+                                  ],
+                      "status":  "VERIFIED",
+                      "confidence":  0.88,
+                      "laag":  "M",
+                      "beslisregel":  "Ouroboros zonder interne consolidatiecycli is onvolledig. Canon-lock vereist zowel externe input als interne versterking om te convergeren.",
+                      "blacklist_triggers":  [
+                                                 "alleen externe feedback is voldoende",
+                                                 "geheugen is opslag"
+                                             ]
+                  },
+                  {
+                      "id":  "C-ARCHITECTUUR-001",
+                      "naam":  "Architectuur \u003e Schaal — Evolutionair bewijs",
+                      "claim":  "De natuur koos krimp + betere architectuur boven verdere schaalvergroting na piek",
+                      "bronnen":  [
+                                      "MIT: minder ionenkanalen in menselijke neuronen = architecturale optimalisatie",
+                                      "Menselijk brein: volume krimp 30.000 jaar geleden na piek 800.000 jaar geleden",
+                                      "Jordan et al. 2021 (Univ. Bern/HBP): evolutionaire algoritmen ontstaan via selectiedruk — niet top-down geprogrammeerd"
+                                  ],
+                      "status":  "VERIFIED",
+                      "confidence":  0.95,
+                      "laag":  "Q",
+                      "beslisregel":  "LLMs zitten in de Homo erectus fase. De natuur heeft die doorlopen en gekozen voor minder maar slimmer. Schaalargument = evolutionair achterhaald.",
+                      "blacklist_triggers":  [
+                                                 "LLM is AGI",
+                                                 "parameters = intelligentie",
+                                                 "benchmark = begrip",
+                                                 "transformer architectuur is voldoende"
+                                             ]
+                  },
+                  {
+                      "id":  "C-BASELINE-001",
+                      "naam":  "Rustmetabolisme domineert piekbelasting",
+                      "claim":  "Architectuur bepaalt de vaste kosten — rekenkracht bepaalt alleen de piek",
+                      "bronnen":  [
+                                      "Rustmetabolisme: grootste energieverbruiker = neuronen klaarstaan, niet actief denken",
+                                      "Canon reduceert herberekening = lagere baseline, niet lagere piek"
+                                  ],
+                      "status":  "VERIFIED",
+                      "confidence":  0.89,
+                      "laag":  "M",
+                      "beslisregel":  "Canon-lock optimaliseert baseline door herberekening te elimineren. Niet de piek optimaliseren — de vaste kosten reduceren.",
+                      "blacklist_triggers":  [
+
+                                             ]
+                  },
+                  {
+                      "id":  "C-FEEDBACKLOOP-001",
+                      "naam":  "Positive Feedback Loop — Ouroboros op ecosysteemniveau",
+                      "claim":  "Neuro-inspired hardware versnelt breinonderzoek, betere kennis verbetert hardware — zichzelf versterkende lus",
+                      "bronnen":  [
+                                      "Jordan et al. 2021 (HBP): feedback loop tussen neuromorfe hardware en hersenonderzoek",
+                                      "BrainScaleS (Heidelberg): analog circuits + sparse spiking als F-laag principe in hardware",
+                                      "SpiNNaker2 (TU Dresden/Manchester): 10M cores, SPRIN-D pilotproject"
+                                  ],
+                      "status":  "VERIFIED",
+                      "confidence":  0.86,
+                      "laag":  "M",
+                      "beslisregel":  "Ouroboros op ecosysteemniveau: elke iteratie levert betere input voor de volgende. Systeem zonder deze lus convergeert niet — het stagneert.",
+                      "blacklist_triggers":  [
+
+                                             ]
+                  }
+              ],
+    "blacklist":  [
+                      {
+                          "id":  "BL-001",
+                          "patroon":  "meer parameters leidt tot intelligentie",
+                          "reden":  "Weerlegd door Wet van Schepman, NIST factor 1.000.000, Rao et al. 2022",
+                          "canon_ref":  "C-ENERGIE-001",
+                          "hard_block":  true
+                      },
+                      {
+                          "id":  "BL-002",
+                          "patroon":  "LLM architectuur is voldoende voor AGI",
+                          "reden":  "Structureel gebrek: geen F-laag, geen Canon, geen Ouroboros, geen accumulatie over sessies",
+                          "canon_ref":  "C-ARCHITECTUUR-001",
+                          "hard_block":  true
+                      },
+                      {
+                          "id":  "BL-003",
+                          "patroon":  "benchmark prestatie = begrip",
+                          "reden":  "Adversarial attacks tonen aan dat statistisch correct ≠ structureel begrip",
+                          "canon_ref":  "C-ARCHITECTUUR-001",
+                          "hard_block":  true
+                      },
+                      {
+                          "id":  "BL-004",
+                          "patroon":  "transformer architectuur is voldoende voor bewustzijn",
+                          "reden":  "Brein ≠ computer. Kováč 2008: computermodel van het brein is onjuist, ook als metafoor.",
+                          "canon_ref":  "C-ARCHITECTUUR-001",
+                          "hard_block":  true
+                      }
+                  ],
+    "mechanismen":  {
+                        "waterbedeffect":  {
+                                               "definitie":  "Vast energiebudget, betere allocatie. Druk op één plek → andere plek omhoog. Totaal volume onveranderd.",
+                                               "bron":  "Raichle et al. 2001",
+                                               "scp_mapping":  {
+                                                                   "F_laag":  "Drukt neer — blokkeert vroeg, elimineert verbruik vóór allocatie",
+                                                                   "Q_laag":  "Komt omhoog — krijgt vrijgekomen budget voor echte redenering",
+                                                                   "LLM_contrast":  "LLM pompt meer water in bij zware taak. Brein en SCP niet."
+                                                               }
+                                           },
+                        "energieredistributie_vs_energiereductie":  {
+                                                                        "reductie":  "Rao 2022: architectuur verbruikt structureel minder (16x)",
+                                                                        "redistributie":  "Raichle 2001: vast budget slimmer verdeeld — zware taak dimmt andere gebieden",
+                                                                        "scp_implicatie":  "F-laag realiseert beide: minder tokens verwerken (reductie) + budget vrijmaken voor Q-laag (redistributie)"
+                                                                    }
+                    },
+    "roadmap":  {
+                    "niveau_1":  "Canon als beslisregels — dit bestand (operationeel: Jengo bevraagt JSON)",
+                    "niveau_2":  "F-laag met energiescore — input krijgt overbodigheidsscore, F-laag blokkeert op drempel",
+                    "niveau_3":  "Ouroboros met wetenschappelijke update — bevestigd principe verhoogt confidence score"
+                }
+}

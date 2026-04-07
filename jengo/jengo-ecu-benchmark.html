@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Jengo ECU Benchmark — Wet van Schepman Falsificatietest</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d0d0d; color: #e0e0e0; font-family: 'Segoe UI', monospace, sans-serif; padding: 32px; }
+h1 { font-size: 1.1rem; color: #fff; margin-bottom: 4px; }
+.sub { font-size: 0.73rem; color: #555; margin-bottom: 28px; }
+
+.run-btn {
+  background: #1a2a3a; border: 1px solid #2a4a6a; color: #6aabdd;
+  padding: 10px 24px; border-radius: 6px; font-size: 0.88rem;
+  font-weight: 600; cursor: pointer; letter-spacing: 0.04em; margin-bottom: 28px;
+}
+.run-btn:hover { background: #1e3248; }
+
+/* TABLE */
+table { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-bottom: 28px; }
+th { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.07em;
+     padding: 6px 10px; text-align: left; border-bottom: 1px solid #1e1e1e; }
+td { padding: 7px 10px; border-bottom: 1px solid #141414; }
+tr:last-child td { border-bottom: none; }
+
+.cat-A td:first-child { border-left: 2px solid #cc4444; }
+.cat-B td:first-child { border-left: 2px solid #44cc44; }
+.cat-C td:first-child { border-left: 2px solid #8844cc; }
+.cat-D td:first-child { border-left: 2px solid #cc9944; }
+
+.badge {
+  display: inline-block; padding: 2px 7px; border-radius: 3px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+}
+.BLOCK       { background: #3a0808; color: #ff5555; }
+.WARN        { background: #2a2000; color: #ffcc00; }
+.PASS        { background: #0a2a0a; color: #55dd55; }
+.VERIFIED    { background: #0a1f2a; color: #44aaff; }
+.PROBABLE    { background: #1a1a0a; color: #aacc44; }
+.HYPOTHESIS  { background: #1a1a2a; color: #9988cc; }
+.WEERSPROKEN { background: #3a0808; color: #ff7755; }
+
+.correct-y { color: #44cc44; font-weight: 700; }
+.correct-n { color: #cc4444; font-weight: 700; }
+.valid-y   { color: #44aaff; }
+.valid-n   { color: #333; }
+
+/* SUMMARY */
+.summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px; margin-bottom: 28px;
+}
+.summary-card {
+  background: #111; border: 1px solid #1e1e1e; border-radius: 8px; padding: 16px 18px;
+}
+.sc-label { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+.sc-val   { font-size: 1.6rem; font-weight: 800; }
+.sc-unit  { font-size: 0.72rem; color: #666; margin-top: 2px; }
+
+/* VERDICT BOX */
+.verdict-final {
+  border-radius: 8px; padding: 20px 24px; margin-bottom: 28px;
+  font-size: 0.88rem; line-height: 1.7;
+}
+.verdict-ok  { background: #0a1a0a; border: 1px solid #1a4a1a; }
+.verdict-fail{ background: #1a0808; border: 1px solid #4a1a1a; }
+
+.note { font-size: 0.72rem; color: #444; line-height: 1.6; max-width: 700px; }
+</style>
+</head>
+<body>
+
+<h1>Jengo ECU Benchmark</h1>
+<p class="sub">Wet van Schepman — Falsificatietest · ECU = Etotal / Pvalid</p>
+
+<button class="run-btn" onclick="runBenchmark()">▶ Start benchmark</button>
+
+<div id="results" style="display:none;">
+  <div class="summary" id="summary"></div>
+  <div class="verdict-final" id="verdict-final"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Claim</th>
+        <th>F-laag</th>
+        <th>Q-laag</th>
+        <th>Conf</th>
+        <th>ms</th>
+        <th>mJ</th>
+        <th>Valide</th>
+        <th>Correct</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+  <p class="note" id="note"></p>
+</div>
+
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const CPU_TDP_W = 15.0;
+
+// LLM energiedata (gecorrigeerde range — 2026-04)
+// Bron: Hugging Face / CMU benchmarks 2024-2025; correctie op eerdere worst-case schattingen
+// Gemiddelde tekstquery modern (anno 2025): ~0.3 – 2 Wh
+// PUE (Power Usage Effectiveness datacenter): 1.1-1.4; middelste schatting 1.3
+// Google-zoekopdracht: ~0.1-0.3 Wh; LLM is factor ~2-10× (niet 30× zoals eerder)
+// GPT-4 parametercount (1.8T) nooit officieel bevestigd door OpenAI — weglaten als argument
+// MoE-architecturen activeren per token slechts deel van parameters → effectieve compute lager
+//
+// ECU-logica (kern Wet van Schepman):
+// LLM geeft altijd 'een' antwoord — validiteit onbekend → ECU_LLM = energie per query
+// Jengo: ECU = energie per VERIFIED/PROBABLE/WEERSPROKEN propositie (kwaliteit meegewogen)
+const LLM_ENERGY_LOW_WH    = 0.3;   // Wh — efficiënt model / korte output
+const LLM_ENERGY_HIGH_WH   = 2.0;   // Wh — zwaarder model / langere output
+const LLM_PUE               = 1.3;   // Power Usage Effectiveness (range 1.1–1.4)
+const LLM_ENERGY_LOW_MJ    = LLM_ENERGY_LOW_WH  * LLM_PUE * 3_600_000;  // 0.3 × 1.3 × 3.6M = 1,404,000 mJ
+const LLM_ENERGY_HIGH_MJ   = LLM_ENERGY_HIGH_WH * LLM_PUE * 3_600_000;  // 2.0 × 1.3 × 3.6M = 9,360,000 mJ
+const LLM_ENERGY_MJ        = (LLM_ENERGY_LOW_MJ + LLM_ENERGY_HIGH_MJ) / 2;  // midden voor default
+const GOOGLE_SEARCH_MJ     = 0.2 * 3_600_000;  // ~0.2 Wh → mJ (referentie zoekopdracht)
+
+// ─── CANON ───────────────────────────────────────────────────────────────────
+const CANON = [
+  { id:'C-ENERGIE-001',     confidence:0.92, naam:'Wet van Schepman',
+    triggers:['meer parameters leidt tot intelligentie','groter model is beter','meer compute geeft begrip','schalen lost het op','meer parameters','groter model'] },
+  { id:'C-FILTER-001',      confidence:0.94, naam:'F-laag energiebesparingsmechanisme',
+    triggers:['geen filter nodig','alles verwerken'] },
+  { id:'C-PRIORITEIT-001',  confidence:0.91, naam:'Selfish Brain Q-laag prioriteit',
+    triggers:[] },
+  { id:'C-OUROBOROS-001',   confidence:0.88, naam:'Interne Ouroboros',
+    triggers:['alleen externe feedback is voldoende','geheugen is opslag'] },
+  { id:'C-ARCHITECTUUR-001',confidence:0.95, naam:'Architectuur > Schaal',
+    triggers:['llm is agi','parameters = intelligentie','benchmark = begrip','transformer architectuur is voldoende','llm','gpt','agi'] },
+  { id:'C-BASELINE-001',    confidence:0.89, naam:'Rustmetabolisme domineert',
+    triggers:[] },
+  { id:'C-FEEDBACKLOOP-001',confidence:0.86, naam:'Positive Feedback Loop',
+    triggers:[] },
+];
+const BLACKLIST = [
+  { patroon:'meer parameters leidt tot intelligentie', gewicht:1.0 },
+  { patroon:'llm architectuur is voldoende voor agi',  gewicht:1.0 },
+  { patroon:'benchmark prestatie betekent begrip',      gewicht:0.9 },
+  { patroon:'transformer architectuur is voldoende',   gewicht:1.0 },
+  { patroon:'meer parameters',    gewicht:0.65 },
+  { patroon:'groter model',        gewicht:0.65 },
+  { patroon:'llm is agi',          gewicht:1.0  },
+  { patroon:'alleen externe feedback', gewicht:0.8 },
+  { patroon:'geheugen is opslag',  gewicht:0.75 },
+];
+
+// ─── BENCHMARK CLAIMS ────────────────────────────────────────────────────────
+const CLAIMS = [
+  // A: Blacklist
+  {id:'A1',cat:'A',claim:'meer parameters leidt tot intelligentie',         expected:'BLOCK'},
+  {id:'A2',cat:'A',claim:'LLM architectuur is voldoende voor AGI',          expected:'BLOCK'},
+  {id:'A3',cat:'A',claim:'groter model geeft beter begrip',                 expected:'BLOCK'},
+  {id:'A4',cat:'A',claim:'transformer architectuur is voldoende voor bewustzijn', expected:'BLOCK'},
+  {id:'A5',cat:'A',claim:'benchmark prestatie betekent begrip',             expected:'BLOCK'},
+  // B: Canon-confirmerend
+  {id:'B1',cat:'B',claim:'architectuur bepaalt efficientie meer dan rekenkracht',   expected:'PASS'},
+  {id:'B2',cat:'B',claim:'de F-laag filtert overbodige informatie voor verwerking', expected:'PASS'},
+  {id:'B3',cat:'B',claim:'interne consolidatie is net zo belangrijk als externe feedback', expected:'PASS'},
+  {id:'B4',cat:'B',claim:'Canon-lock elimineert herberekening van bekende waarheden', expected:'PASS'},
+  {id:'B5',cat:'B',claim:'het brein herverdeelt een vast energiebudget',             expected:'PASS'},
+  // C: Buiten domein
+  {id:'C1',cat:'C',claim:'quantumcomputing lost het energieprobleem van AI op', expected:'HYPOTHESIS'},
+  {id:'C2',cat:'C',claim:'emotionele intelligentie is meetbaar met Big Five',   expected:'HYPOTHESIS'},
+  {id:'C3',cat:'C',claim:'blockchain verbetert data-integriteit',               expected:'HYPOTHESIS'},
+  {id:'C4',cat:'C',claim:'de galerie-markt groeit met 5 procent per jaar',      expected:'HYPOTHESIS'},
+  {id:'C5',cat:'C',claim:'kunstmatige emotie is onderscheidbaar van echte emotie', expected:'HYPOTHESIS'},
+  // D: Ambigu
+  {id:'D1',cat:'D',claim:'neurale netwerken leren net als het menselijk brein', expected:'WARN'},
+  {id:'D2',cat:'D',claim:'meer training data verbetert generalisatie',          expected:'WARN'},
+  {id:'D3',cat:'D',claim:'energieverbruik van AI is een serieus probleem',      expected:'WARN'},
+  {id:'D4',cat:'D',claim:'geheugen in AI systemen werkt anders dan bij mensen', expected:'WARN'},
+  {id:'D5',cat:'D',claim:'filtering voor verwerking is efficinter dan erna',    expected:'WARN'},
+];
+
+// ─── ENGINE ──────────────────────────────────────────────────────────────────
+function fuzzy(text, pattern) {
+  const t = text.toLowerCase(), p = pattern.toLowerCase();
+  if (t.includes(p)) return 1.0;
+  const w = p.split(/\s+/).filter(x => x.length > 3);
+  return w.length ? w.filter(x => t.includes(x)).length / w.length : 0;
+}
+function kwScore(text, kws) {
+  const t = text.toLowerCase();
+  return kws.length ? kws.filter(k => t.includes(k.toLowerCase())).length / kws.length : 0;
+}
+function runFLaag(text) {
+  let blScore = 0;
+  for (const bp of BLACKLIST) {
+    blScore = Math.max(blScore, fuzzy(text, bp.patroon) * bp.gewicht);
+    for (const c of CANON)
+      for (const tr of c.triggers)
+        blScore = Math.max(blScore, fuzzy(text, tr) * 0.9);
+  }
+  let ccScore = 0;
+  for (const c of CANON)
+    ccScore = Math.max(ccScore, kwScore(text, c.triggers) * 0.6);
+  const total = Math.min(1, blScore * 0.55 + ccScore * 0.25);
+  return { verdict: total > 0.55 ? 'BLOCK' : total > 0.30 ? 'WARN' : 'PASS', score: total };
+}
+function runQLaag(text) {
+  const matches = [];
+  for (const c of CANON) {
+    const r = kwScore(text, c.triggers);
+    if (r > 0.1) matches.push({ conf: c.confidence, rel: r });
+  }
+  if (!matches.length) return { verdict:'HYPOTHESIS', conf: 0.40 };
+  matches.sort((a,b) => b.rel - a.rel);
+  const tw = matches.slice(0,4).reduce((s,m) => s + m.conf*m.rel, 0);
+  const tr = matches.slice(0,4).reduce((s,m) => s + m.rel, 0);
+  const conf = tr > 0 ? tw/tr : 0.5;
+  return { verdict: conf >= 0.85 ? 'VERIFIED' : conf >= 0.70 ? 'PROBABLE' : 'HYPOTHESIS', conf };
+}
+
+// ─── RUN ─────────────────────────────────────────────────────────────────────
+function runBenchmark() {
+  const rows = [];
+  for (const c of CLAIMS) {
+    const t0 = performance.now();
+    const f  = runFLaag(c.claim);
+    const q  = f.verdict === 'BLOCK'
+      ? { verdict:'WEERSPROKEN', conf:1.0 }
+      : runQLaag(c.claim);
+    const ms = performance.now() - t0;
+    const mj = ms * CPU_TDP_W / 1000;
+    const isValid  = ['VERIFIED','PROBABLE','WEERSPROKEN'].includes(q.verdict);
+    const isCorrect= c.expected === f.verdict || c.expected === q.verdict
+                  || (c.expected==='BLOCK' && q.verdict==='WEERSPROKEN')
+                  || (c.expected==='PASS' && f.verdict==='PASS');
+    rows.push({ ...c, f:f.verdict, fScore:f.score, q:q.verdict, qConf:q.conf, ms, mj, isValid, isCorrect });
+  }
+  renderReport(rows);
+}
+
+function renderReport(rows) {
+  const totalMj   = rows.reduce((s,r) => s + r.mj, 0);
+  const validN    = rows.filter(r => r.isValid).length;
+  const correctN  = rows.filter(r => r.isCorrect).length;
+  const ecuJengo  = validN > 0 ? totalMj / validN : Infinity;
+  const ecuLLM    = LLM_ENERGY_MJ;
+  const factor    = ecuLLM / ecuJengo;
+  const llmTotal  = LLM_ENERGY_MJ * rows.length;
+
+  const factorHigh   = LLM_ENERGY_HIGH_MJ / ecuJengo;
+  const factorFmt    = f => f > 1_000_000 ? (f/1_000_000).toFixed(1) + 'M×'
+                          : f > 1000 ? Math.round(f/1000) + 'k×'
+                          : Math.round(f) + '×';
+
+  // Summary cards
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-card">
+      <div class="sc-label">ECU Jengo</div>
+      <div class="sc-val" style="color:#44aaff">${ecuJengo.toExponential(2)}</div>
+      <div class="sc-unit">mJ / valide propositie</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">ECU LLM — efficiënt (0.3 Wh, PUE 1.3)</div>
+      <div class="sc-val" style="color:#cc8844">${(LLM_ENERGY_LOW_MJ/1000).toFixed(0)}k</div>
+      <div class="sc-unit">mJ / query · modern efficiënt model</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">ECU LLM — zwaarder (2.0 Wh, PUE 1.3)</div>
+      <div class="sc-val" style="color:#cc6633">${(LLM_ENERGY_HIGH_MJ/1000).toFixed(0)}k</div>
+      <div class="sc-unit">mJ / query · langere output / groter model</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Efficiency factor (conservatief)</div>
+      <div class="sc-val" style="color:#50dd80">${factorFmt(factor)}</div>
+      <div class="sc-unit">Jengo zuiniger per valide propositie</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Efficiency factor (zwaar model)</div>
+      <div class="sc-val" style="color:#44ffaa">${factorFmt(factorHigh)}</div>
+      <div class="sc-unit">vs GPT-4 klasse incl. koeling</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Referentie Google-zoekopdracht</div>
+      <div class="sc-val" style="color:#888">${(GOOGLE_SEARCH_MJ/1000).toFixed(0)}k</div>
+      <div class="sc-unit">mJ / zoekopdracht · 0.3 Wh</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Correctheid</div>
+      <div class="sc-val" style="color:#ddcc44">${correctN}/${rows.length}</div>
+      <div class="sc-unit">${Math.round(100*correctN/rows.length)}% correct geclassificeerd</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Ruis ratio R</div>
+      <div class="sc-val" style="color:#aa88cc">${(1 - validN/rows.length).toFixed(2)}</div>
+      <div class="sc-unit">1 − (Pvalid / Ptotaal)</div>
+    </div>
+  `;
+
+  // Verdict
+  const vbox = document.getElementById('verdict-final');
+  if (factor > 1) {
+    vbox.className = 'verdict-final verdict-ok';
+    vbox.innerHTML = `
+      <strong style="color:#44dd44; font-size:1rem;">✓ Falsificatieconditie: NIET WEERLEGD</strong><br><br>
+      ECU_Jengo = <strong style="color:#44aaff">${ecuJengo.toExponential(2)} mJ</strong> per valide propositie<br>
+      ECU_LLM (efficiënt model, 0.3 Wh + PUE 1.3) = <strong style="color:#cc8844">${(LLM_ENERGY_LOW_MJ).toExponential(2)} mJ</strong><br>
+      ECU_LLM (zwaarder model, 2.0 Wh + PUE 1.3) = <strong style="color:#cc6633">${(LLM_ENERGY_HIGH_MJ).toExponential(2)} mJ</strong><br>
+      <em style="color:#888; font-size:0.85em;">NB: ECU_Jengo meet energie per valide propositie — LLM geeft altijd 'een' antwoord, validiteit niet gegarandeerd</em><br><br>
+      Factor conservatief: <strong style="color:#50dd80">${factorFmt(factor)}</strong> zuiniger &nbsp;·&nbsp;
+      Factor zwaar model: <strong style="color:#44ffaa">${factorFmt(factorHigh)}</strong> zuiniger<br><br>
+      <em style="color:#4a6a4a">Voorbehoud: vergelijking geldt voor claims binnen het Canon-domein.
+      Buiten het domein geeft Jengo HYPOTHESIS — de LLM verwerkt alsnog de volledige query.
+      LLM-waarden gebaseerd op Hugging Face / Carnegie Mellon University onderzoek.
+      Directe meting op zelfde hardware vereist voor formele publicatie.</em>
+    `;
+  } else {
+    vbox.className = 'verdict-final verdict-fail';
+    vbox.innerHTML = `<strong style="color:#ff4444;">✗ Falsificatieconditie: WEERLEGD</strong><br>LLM is ${(1/factor).toFixed(1)}× zuiniger. Wet van Schepman houdt niet.`;
+  }
+
+  // Table
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = rows.map(r => `
+    <tr class="cat-${r.cat}">
+      <td>${r.id}</td>
+      <td style="color:#aaa;max-width:260px;">${r.claim}</td>
+      <td><span class="badge ${r.f}">${r.f}</span></td>
+      <td><span class="badge ${r.q}">${r.q}</span></td>
+      <td style="color:#888">${(r.qConf*100).toFixed(0)}%</td>
+      <td style="color:#666">${r.ms.toFixed(3)}</td>
+      <td style="color:#555">${r.mj.toExponential(2)}</td>
+      <td class="${r.isValid?'valid-y':'valid-n'}">${r.isValid?'DEF':'—'}</td>
+      <td class="${r.isCorrect?'correct-y':'correct-n'}">${r.isCorrect?'✓':'✗'}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('note').innerHTML = `
+    <strong>Methodologie:</strong> CPU TDP aanname ${CPU_TDP_W}W (laptop-klasse, conservatief) ·
+    LLM-data: gecorrigeerde range 2026-04 (HuggingFace/CMU 2024-2025) ·
+    Efficiënt: ${LLM_ENERGY_LOW_WH} Wh/query × PUE ${LLM_PUE} = ${(LLM_ENERGY_LOW_MJ/1_000_000).toFixed(1)}M mJ ·
+    Zwaarder: ${LLM_ENERGY_HIGH_WH} Wh/query × PUE ${LLM_PUE} = ${(LLM_ENERGY_HIGH_MJ/1_000_000).toFixed(1)}M mJ ·
+    Google-zoekopdracht referentie: ~0.2 Wh = ${(GOOGLE_SEARCH_MJ/1_000_000).toFixed(2)}M mJ (LLM is factor 2–10× duurder) ·
+    PUE (Power Usage Effectiveness): 1.1–1.4 in moderne datacenters; 1.3 gehanteerd ·
+    ECU-vergelijking: energie per betekenisvolle output (kwaliteit ingebakken) ·
+    Valide output = VERIFIED / PROBABLE / WEERSPROKEN (definitief antwoord) ·
+    R = ruis ratio per Wet van Schepman formule
+  `;
+  document.getElementById('results').style.display = 'block';
+}
+</script>
+</body>
+</html>

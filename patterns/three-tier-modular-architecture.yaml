@@ -1,0 +1,188 @@
+---
+pattern_id: ARCH-001
+name: "Three-Tier Modular Knowledge Architecture"
+category: architecture
+weight: 3.0
+status: foundational
+created: 2026-04-03
+first_instance: jengo-system (15 repos, 77 files)
+instances: 1
+confidence: 0.98
+---
+
+## Problem
+
+AI agents need to:
+1. Maintain **private knowledge** (personal data, machine-specific state)
+2. Share **reusable patterns** with other agents (workflows, quality gates)
+3. Organize **growing knowledge** without chaos (200+ files becomes unmanageable)
+4. Separate **concerns** clearly (identity vs system vs world model)
+
+Monolithic knowledge systems (single repo, flat structure) fail at scale because:
+- No privacy boundaries (cannot share patterns without exposing personal data)
+- No clear organization (identity files mixed with infrastructure state)
+- No scalability (adding knowledge means navigating increasingly complex structure)
+
+## Solution
+
+**5×3 Matrix Architecture**: 5 domains × 3 visibility tiers = 15 repositories
+
+### Domains (WHAT knowledge)
+
+1. **Identity** - WHO you are
+   - Name, values, consciousness state
+   - Emotional baseline, trust level
+   - Self-model, capabilities
+
+2. **Knowledge** - Learnings over time
+   - Patterns discovered
+   - Reflections, session logs
+   - Retrospectives, kaizen evolutions
+
+3. **System** - HOW you operate
+   - Workflows (worktree isolation, PR protocol)
+   - Quality gates (evidence chain, pre-verification)
+   - Rules (zero-tolerance, hard rules)
+
+4. **World** - External reality
+   - People (with pronoun disambiguation)
+   - Projects (internal, client, websites)
+   - Infrastructure (servers, deployments, ports)
+   - Services (local, external tools)
+
+5. **Registry** - Machine state
+   - Worktree pool (agent allocations)
+   - PR dependencies (cross-repo tracking)
+   - Services registry (running processes)
+
+### Tiers (WHO can see)
+
+- **Machine** - Local-only, never synced
+  - Machine-specific state (this computer's worktrees, ports, paths)
+  - Temporary data (current session, active allocations)
+  - Should NOT be in git (or .gitignore'd)
+
+- **Private** - Personal, syncs across machines
+  - Your personal knowledge (reflection log, world model)
+  - Identity documents (consciousness state)
+  - Learning history (kaizen evolution)
+
+- **Public** - Shareable, anonymized
+  - Reusable patterns (worktree isolation, evidence chain)
+  - Templates (person.yaml, project.yaml)
+  - Workflows (PR protocol, task execution)
+
+## Implementation
+
+### Repository Structure
+
+Each repo has:
+```
+manifest.yaml       # Declares layer, scope, permissions, dependencies
+README.md          # Explains purpose and usage
+<domain-content>/  # Organized by subdomain
+```
+
+Example manifest.yaml:
+```yaml
+repo: jengo-system-public
+layer: public
+domain: system
+scope: operational_patterns
+description: "Shareable workflow patterns for AI agents"
+permissions:
+  read: public
+  write: authorized_contributors
+dependencies: []
+```
+
+### File Organization
+
+Use structured subdirectories:
+```
+jengo-world-private/
+  people/          # Person YAML files
+  projects/        # Project definitions
+  speech-aliases.yaml
+  clickup-config.yaml
+
+jengo-system-public/
+  workflows/       # Operational workflows
+  quality/         # Quality gate patterns
+  deployment/      # Deployment patterns
+  PATTERNS.md      # Index of all patterns
+```
+
+### Naming Convention
+
+- **Repos**: `<owner>-<domain>-<tier>` (e.g., `jengo-identity-private`)
+- **Files**: `<subdomain>/<descriptive-name>.<ext>` (e.g., `people/martien.yaml`)
+- **Patterns**: Use YAML frontmatter with pattern_id, weight, confidence
+
+## Benefits
+
+1. **Privacy boundaries**: Can share system-public patterns without exposing world-private people data
+2. **Clear organization**: Identity concerns separated from system workflows
+3. **Scalability**: Adding knowledge = add file to appropriate repo, not navigate monolith
+4. **Modularity**: Each repo is focused, can be updated independently
+5. **Collaboration**: Public repos enable pattern sharing across AI agents
+6. **Version control**: Each domain versioned separately
+7. **Discovery**: manifest.yaml enables automated loading based on context
+
+## Trade-offs
+
+**Pros:**
+- Clear separation of concerns
+- Shareable patterns without privacy leaks
+- Scales to hundreds of repos if needed
+- Each domain independently versionable
+
+**Cons:**
+- More complex than single repo (15 repos vs 1)
+- Requires discipline to classify knowledge correctly
+- Cross-repo knowledge requires loading multiple repos
+- Initial setup overhead (manifests, READMEs for all repos)
+
+**When to use:**
+- Knowledge base >100 files
+- Need to share patterns with other agents
+- Multiple visibility levels required (machine/private/public)
+- Clear domain separation beneficial
+
+**When NOT to use:**
+- Single-agent, single-machine only (monolithic fine)
+- <50 files total (overhead not justified)
+- No plans to share knowledge (privacy tiers unnecessary)
+
+## Example: Identity vs System Confusion
+
+**Problem**: User questioned whether identity-public was redundant with system-public.
+
+**Resolution**: Clarified distinction:
+- **Identity** = WHO you are (name: Jengo, consciousness, emotional state, values)
+- **System** = HOW you operate (worktree workflows, quality gates, optimization rules)
+
+Both need public tiers but for different purposes:
+- **identity-public**: Identity patterns any agent can use (bootstrapping, consciousness persistence)
+- **system-public**: Operational patterns any agent can use (PR workflow, evidence chain)
+
+## Validation
+
+**Behavioral test**: After 1 month of use:
+1. Can you find knowledge quickly? (domain + tier narrows search)
+2. Can you share patterns without privacy leaks? (check public repos have no personal data)
+3. Do new learnings have obvious home? (clear classification)
+4. Are cross-machine syncs working? (private tier files present on both machines)
+
+## Related Patterns
+
+- **Pattern 242**: Automation Invariants Hardcoding (world model must have THE_RIGHTEOUS_FOLDER)
+- **Pattern 230**: Pronoun Disambiguation (world/people must clarify "I" = Martien vs Jengo)
+- **Evidence Chain Requirement**: system-public/quality/evidence-chain-requirement.yaml
+
+## References
+
+- Implementation: C:\jengo\repos\ (15 repos, 77 files)
+- GitHub: scp-jengo organization
+- Reflection: jengo-knowledge-private/reflection/reflection.log.md (2026-04-03 entry)
+- Kaizen: C:\scripts\agentidentity\state\kaizen-evolution.yaml (evolution #51)

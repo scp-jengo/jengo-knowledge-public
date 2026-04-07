@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jengo Pipeline — F-laag + Q-laag</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d0d0d;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+header {
+  padding: 18px 28px 12px;
+  border-bottom: 1px solid #1e1e1e;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+header h1 { font-size: 1.05rem; font-weight: 600; color: #fff; }
+header p  { font-size: 0.73rem; color: #555; }
+
+.body { display: grid; grid-template-columns: 400px 1fr; flex: 1; }
+
+/* INPUT COLUMN */
+.col-input {
+  padding: 24px;
+  border-right: 1px solid #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+label { font-size: 0.68rem; color: #555; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 6px; }
+
+textarea {
+  width: 100%;
+  height: 100px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 6px;
+  color: #ddd;
+  font-size: 0.88rem;
+  padding: 10px 12px;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+textarea:focus { outline: none; border-color: #3a3a3a; }
+
+button#run {
+  width: 100%;
+  padding: 10px;
+  background: #1a2a3a;
+  border: 1px solid #2a4a6a;
+  border-radius: 6px;
+  color: #6aabdd;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.15s;
+}
+button#run:hover { background: #1e3248; }
+
+/* PIPELINE COLUMN */
+.col-pipeline {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* STAGE */
+.stage {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 0;
+}
+.stage-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.stage-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid #2a2a2a;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #444;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.stage-connector {
+  width: 2px;
+  flex: 1;
+  background: #1a1a1a;
+  min-height: 20px;
+  transition: background 0.3s;
+}
+.stage-content {
+  flex: 1;
+  padding-bottom: 20px;
+}
+.stage-title {
+  font-size: 0.72rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+.stage-card {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 6px;
+  padding: 14px 16px;
+  transition: border-color 0.3s;
+}
+
+/* IDLE STATE */
+.stage-card.idle { opacity: 0.4; }
+
+/* F-LAAG COLORS */
+.stage-dot.block { background: #3a0a0a; border-color: #7a2020; color: #ff5555; }
+.stage-dot.warn  { background: #2a2000; border-color: #6a5000; color: #ffcc33; }
+.stage-dot.pass  { background: #0a2a0a; border-color: #206020; color: #55dd55; }
+.stage-connector.active { background: #2a3a2a; }
+.stage-connector.blocked { background: #3a1a1a; }
+
+.verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.verdict-badge {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+.badge-BLOCK { background: #3a0808; color: #ff4444; }
+.badge-WARN  { background: #2a2000; color: #ffcc00; }
+.badge-PASS  { background: #0a2a0a; color: #44dd44; }
+.badge-VERIFIED  { background: #0a1f2a; color: #44aaff; }
+.badge-PROBABLE  { background: #1a1a0a; color: #aacc44; }
+.badge-HYPOTHESIS{ background: #1a1a2a; color: #9988cc; }
+
+.score-num {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.detail-row {
+  font-size: 0.76rem;
+  color: #666;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.detail-row span { color: #999; }
+
+/* TRIGGERED */
+.triggers-list { margin-top: 8px; }
+.trigger-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  background: #1a0a0a;
+  border: 1px solid #3a1a1a;
+  color: #cc6666;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin: 2px 3px 2px 0;
+}
+
+/* CANON REFS */
+.canon-refs { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.canon-ref-card {
+  background: #0d0d0d;
+  border: 1px solid #1e1e1e;
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.canon-ref-id { font-size: 0.65rem; color: #555; font-family: monospace; width: 110px; flex-shrink: 0; }
+.canon-ref-name { font-size: 0.75rem; color: #aaa; flex: 1; }
+.canon-ref-conf {
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* SYNTHESIS */
+.synthesis-text {
+  font-size: 0.85rem;
+  color: #ccc;
+  line-height: 1.6;
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: #0d1a0d;
+  border: 1px solid #1a2a1a;
+  border-radius: 6px;
+}
+.synthesis-text.hypothesis { background: #0d0d1a; border-color: #1a1a2a; }
+.synthesis-text.blocked    { background: #1a0808; border-color: #2a1010; color: #cc8888; }
+
+.confidence-bar-wrap {
+  margin-top: 10px;
+  background: #1a1a1a;
+  border-radius: 3px;
+  height: 4px;
+  overflow: hidden;
+}
+.confidence-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ENERGY FLOW */
+.energy-flow {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  align-items: center;
+}
+.energy-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.energy-block {
+  border-radius: 3px;
+  transition: all 0.4s;
+}
+.energy-lbl { font-size: 0.6rem; color: #555; }
+.energy-arrow { font-size: 0.7rem; color: #333; }
+
+.empty-msg { font-size: 0.78rem; color: #333; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Jengo Pipeline</h1>
+  <p>S → O → L → F-laag → B → M → Q-laag · volledig doorloopt</p>
+</header>
+
+<div class="body">
+
+  <!-- INPUT -->
+  <div class="col-input">
+    <div>
+      <label>Claim / vraag</label>
+      <textarea id="claim" placeholder="Typ een bewering of vraag...&#10;&#10;Bijv: 'meer parameters leidt tot betere AI'&#10;Of: 'architectuur bepaalt efficiëntie'"></textarea>
+    </div>
+
+    <button id="run" onclick="runPipeline()">▶ Voer pipeline uit</button>
+
+    <div>
+      <label>Voorbeeldclaims</label>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;">
+        <div class="example-claim" onclick="setClaim(this)" style="cursor:pointer;font-size:0.76rem;color:#667;padding:6px 10px;background:#111;border:1px solid #1e1e1e;border-radius:4px;line-height:1.4;">meer parameters leidt tot betere AI</div>
+        <div class="example-claim" onclick="setClaim(this)" style="cursor:pointer;font-size:0.76rem;color:#667;padding:6px 10px;background:#111;border:1px solid #1e1e1e;border-radius:4px;line-height:1.4;">LLM architectuur is voldoende voor AGI</div>
+        <div class="example-claim" onclick="setClaim(this)" style="cursor:pointer;font-size:0.76rem;color:#667;padding:6px 10px;background:#111;border:1px solid #1e1e1e;border-radius:4px;line-height:1.4;">architectuur bepaalt efficiëntie meer dan rekenkracht</div>
+        <div class="example-claim" onclick="setClaim(this)" style="cursor:pointer;font-size:0.76rem;color:#667;padding:6px 10px;background:#111;border:1px solid #1e1e1e;border-radius:4px;line-height:1.4;">de F-laag blokkeert overbodige informatie voor verwerking</div>
+        <div class="example-claim" onclick="setClaim(this)" style="cursor:pointer;font-size:0.76rem;color:#667;padding:6px 10px;background:#111;border:1px solid #1e1e1e;border-radius:4px;line-height:1.4;">interne consolidatie is net zo belangrijk als externe feedback</div>
+        <div class="example-claim" onclick="setClaim(this)" style="cursor:pointer;font-size:0.76rem;color:#667;padding:6px 10px;background:#111;border:1px solid #1e1e1e;border-radius:4px;line-height:1.4;">quantumcomputing lost het energieprobleem op</div>
+      </div>
+    </div>
+
+    <div id="ouroboros-cmd-wrap" style="display:none;">
+      <label>Ouroboros update (terminal)</label>
+      <div style="background:#111;border:1px solid #222;border-radius:6px;padding:12px;margin-top:4px;">
+        <code id="ouroboros-cmd" style="font-size:0.72rem;color:#7ab4ff;display:block;line-height:1.6;word-break:break-all;"></code>
+        <button onclick="copyCmd()" style="margin-top:8px;background:#1a2a1a;border:1px solid #2a4a2a;color:#5a9a5a;padding:4px 12px;border-radius:4px;font-size:0.7rem;cursor:pointer;">Kopieer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="col-pipeline">
+
+    <!-- S/O/L STAGE -->
+    <div class="stage">
+      <div class="stage-line">
+        <div class="stage-dot" id="dot-sol">S·O·L</div>
+        <div class="stage-connector" id="conn-sol"></div>
+      </div>
+      <div class="stage-content">
+        <div class="stage-title">Sensing · Orientation · Logic</div>
+        <div class="stage-card idle" id="card-sol">
+          <div class="empty-msg">Input verwerking — tokenisatie, patroonherkenning, structuurextractie</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F-LAAG STAGE -->
+    <div class="stage">
+      <div class="stage-line">
+        <div class="stage-dot" id="dot-f">F</div>
+        <div class="stage-connector" id="conn-f"></div>
+      </div>
+      <div class="stage-content">
+        <div class="stage-title">F-laag — Energiefilter</div>
+        <div class="stage-card idle" id="card-f">
+          <div class="empty-msg">Wacht op input...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B/M STAGE -->
+    <div class="stage">
+      <div class="stage-line">
+        <div class="stage-dot" id="dot-bm">B·M</div>
+        <div class="stage-connector" id="conn-bm"></div>
+      </div>
+      <div class="stage-content">
+        <div class="stage-title">Behavior · Memory — Canon lookup</div>
+        <div class="stage-card idle" id="card-bm">
+          <div class="empty-msg">Canon niet bevraagd</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q-LAAG STAGE -->
+    <div class="stage">
+      <div class="stage-line">
+        <div class="stage-dot" id="dot-q">Q</div>
+        <div class="stage-connector" id="conn-q" style="min-height:0;flex:0;"></div>
+      </div>
+      <div class="stage-content">
+        <div class="stage-title">Q-laag — Synthese & Verdict</div>
+        <div class="stage-card idle" id="card-q">
+          <div class="empty-msg">Wacht op F-laag output...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── CANON DATA ───────────────────────────────────────────────────────────────
+const CANON = [
+  {
+    id: 'C-ENERGIE-001',
+    naam: 'Wet van Schepman — Energieefficiëntie',
+    confidence: 0.92,
+    laag: 'Q',
+    beslisregel: 'Schaalvergroting zonder architectuurwijziging levert geen efficiëntie.',
+    blacklist_triggers: ['meer parameters leidt tot intelligentie','groter model is beter','meer compute geeft begrip','schalen lost het op','meer parameters','groter model'],
+    keywords: ['parameters','compute','schalen','energie','efficiëntie','architectuur','schaal','vermogen'],
+    synthesis: 'Empirisch bewezen (NIST factor 1.000.000, Rao et al. 2022 16x reductie): meer rekenkracht zonder architectuurwijziging levert geen proportionele efficiëntiewinst. SCP/Jengo omzeilt dit via F-laag filtering en Canon-vergrendeling.',
+  },
+  {
+    id: 'C-FILTER-001',
+    naam: 'F-laag als primair energiebesparingsmechanisme',
+    confidence: 0.94,
+    laag: 'F',
+    beslisregel: 'F-laag blokkeert vóór O-laag — harde blokkade, geen budget nodig.',
+    blacklist_triggers: ['geen filter nodig','alles verwerken'],
+    keywords: ['filter','filteren','blokkeren','f-laag','overprikkeling','overbodige informatie','gaba'],
+    synthesis: 'Biologisch bewezen via GABA-inhibitie en overprikkeling-onderzoek: pre-synaptisch blokkeren (F-laag) is energetisch superieur aan post-synaptisch filteren. De F-laag is geen kwaliteitsmaatregel — het is een energiebehoudsmechanisme.',
+  },
+  {
+    id: 'C-PRIORITEIT-001',
+    naam: 'Selfish Brain — Q-laag hiërarchische prioriteit',
+    confidence: 0.91,
+    laag: 'Q',
+    beslisregel: 'Q > M > B > L > O > S voor energiebudget.',
+    blacklist_triggers: [],
+    keywords: ['prioriteit','budget','q-laag','selfish brain','energieverdeling','hiërarchie'],
+    synthesis: 'Selfish Brain theorie + Raichle 2001: het brein herverdeelt een vast budget met harde hiërarchie. Q-laag (beslissing) krijgt voorrang. SCP implementeert dit als budgetprioriteit: F-laag elimineert vóór allocatie, Q-laag profiteert.',
+  },
+  {
+    id: 'C-OUROBOROS-001',
+    naam: 'Interne Ouroboros — zelfversterking vereist',
+    confidence: 0.88,
+    laag: 'M',
+    beslisregel: 'Canon-lock vereist interne consolidatielus, niet alleen externe feedback.',
+    blacklist_triggers: ['alleen externe feedback is voldoende','geheugen is opslag'],
+    keywords: ['ouroboros','consolidatie','geheugen','interne lus','zelfversterking','canon','daydreaming','dmn'],
+    synthesis: 'Klinger 1990 + Default Mode Network: helft van wakend leven is interne reward-simulatie die identiteit opbouwt. Skinner weerlegd — externe feedback alleen is onvoldoende. Jengo\'s Ouroboros implementeert dit als mechanische vloer: elke output wordt input voor de volgende cyclus.',
+  },
+  {
+    id: 'C-ARCHITECTUUR-001',
+    naam: 'Architectuur > Schaal — Evolutionair bewijs',
+    confidence: 0.95,
+    laag: 'Q',
+    beslisregel: 'LLMs zitten in de Homo erectus fase. Natuur koos krimp + betere architectuur.',
+    blacklist_triggers: ['llm is agi','parameters = intelligentie','benchmark = begrip','transformer architectuur is voldoende','llm','gpt','agi'],
+    keywords: ['architectuur','evolutie','krimp','homo erectus','llm','agi','transformer','benchmark','brein','natuur'],
+    synthesis: 'Evolutionair bewijs (MIT, Jordan et al. 2021): na piek 800.000 jaar geleden koos de natuur voor krimp + architecturale optimalisatie, niet voor verdere schaalvergroting. LLMs herhalen de Homo erectus fase — meer volume. SCP/Jengo slaat de volgende stap over naar de architectuurfase.',
+  },
+  {
+    id: 'C-BASELINE-001',
+    naam: 'Rustmetabolisme domineert piekbelasting',
+    confidence: 0.89,
+    laag: 'M',
+    beslisregel: 'Architectuur snoeit de baseline — rekenkracht optimaliseert alleen de piek.',
+    blacklist_triggers: [],
+    keywords: ['baseline','rustmetabolisme','vaste kosten','piek','herberekening','canon reduceert'],
+    synthesis: 'Neurobiologisch bewezen: het grootste energieverbruik zit in neuronen die klaarstaan, niet in actief denken. Canon-lock elimineert herberekening van vergrendelde waarheden — dit verlaagt de baseline structureel, niet de piekbelasting.',
+  },
+  {
+    id: 'C-FEEDBACKLOOP-001',
+    naam: 'Positive Feedback Loop — Ouroboros op ecosysteemniveau',
+    confidence: 0.86,
+    laag: 'M',
+    beslisregel: 'Systeem zonder accumulerende lus convergeert niet — het stagneert.',
+    blacklist_triggers: [],
+    keywords: ['feedback loop','ecosysteem','ouroboros','accumulatie','neuromorfe','spinnaker','brainscales'],
+    synthesis: 'Jordan et al. 2021: neuro-inspired hardware versnelt breinonderzoek, betere kennis verbetert hardware — zichzelf versterkende lus. Dit is Ouroboros op ecosysteemniveau. Systemen zonder deze lus (LLMs) resetten elke sessie en stagneren structureel.',
+  },
+];
+
+const BLACKLIST = [
+  { id: 'BL-001', patroon: 'meer parameters leidt tot intelligentie', canon_ref: 'C-ENERGIE-001', gewicht: 1.0 },
+  { id: 'BL-002', patroon: 'llm architectuur is voldoende voor agi',  canon_ref: 'C-ARCHITECTUUR-001', gewicht: 1.0 },
+  { id: 'BL-003', patroon: 'benchmark prestatie = begrip',             canon_ref: 'C-ARCHITECTUUR-001', gewicht: 0.9 },
+  { id: 'BL-004', patroon: 'transformer architectuur is voldoende',    canon_ref: 'C-ARCHITECTUUR-001', gewicht: 1.0 },
+  { id: 'BL-005', patroon: 'meer parameters',    canon_ref: 'C-ENERGIE-001', gewicht: 0.65 },
+  { id: 'BL-006', patroon: 'groter model',        canon_ref: 'C-ENERGIE-001', gewicht: 0.65 },
+  { id: 'BL-007', patroon: 'llm is agi',          canon_ref: 'C-ARCHITECTUUR-001', gewicht: 1.0 },
+  { id: 'BL-008', patroon: 'alleen externe feedback', canon_ref: 'C-OUROBOROS-001', gewicht: 0.8 },
+  { id: 'BL-009', patroon: 'geheugen is opslag',  canon_ref: 'C-OUROBOROS-001', gewicht: 0.75 },
+];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fuzzy(text, pattern) {
+  const t = text.toLowerCase(), p = pattern.toLowerCase();
+  if (t.includes(p)) return 1.0;
+  const pw = p.split(/\s+/).filter(w => w.length > 3);
+  if (!pw.length) return 0;
+  return pw.filter(w => t.includes(w)).length / pw.length;
+}
+
+function keywordScore(text, keywords) {
+  const t = text.toLowerCase();
+  const hits = keywords.filter(k => t.includes(k.toLowerCase()));
+  return hits.length / Math.max(keywords.length, 1);
+}
+
+// ─── F-LAAG ──────────────────────────────────────────────────────────────────
+function fLaag(text) {
+  let blScore = 0, blHits = [];
+  for (const bp of BLACKLIST) {
+    const m = fuzzy(text, bp.patroon);
+    if (m > 0.5) {
+      const w = m * bp.gewicht;
+      if (w > blScore) blScore = w;
+      blHits.push({ id: bp.id, patroon: bp.patroon, score: w, canon_ref: bp.canon_ref });
+    }
+  }
+
+  let ccScore = 0, ccHits = [];
+  for (const c of CANON) {
+    const ks = keywordScore(text, c.keywords);
+    if (ks > 0.2) {
+      ccScore = Math.max(ccScore, ks * 0.6);
+      ccHits.push({ id: c.id, naam: c.naam, score: ks });
+    }
+  }
+
+  const total = blScore * 0.55 + ccScore * 0.25;
+  let verdict;
+  if (total > 0.55) verdict = 'BLOCK';
+  else if (total > 0.30) verdict = 'WARN';
+  else verdict = 'PASS';
+
+  return { verdict, total, blScore, ccScore, blHits, ccHits };
+}
+
+// ─── Q-LAAG ──────────────────────────────────────────────────────────────────
+function qLaag(text, fResult) {
+  // Find relevant Canon entries
+  const matches = [];
+  for (const c of CANON) {
+    const ks = keywordScore(text, c.keywords);
+    const trig = c.blacklist_triggers.reduce((acc, t) => acc + fuzzy(text, t), 0) / Math.max(c.blacklist_triggers.length, 1);
+    const relevance = ks * 0.6 + trig * 0.4;
+    if (relevance > 0.1) {
+      matches.push({ ...c, relevance });
+    }
+  }
+  matches.sort((a, b) => b.relevance - a.relevance);
+
+  if (!matches.length) {
+    return {
+      verdict: 'HYPOTHESIS',
+      confidence: 0.40,
+      matches: [],
+      synthesis: 'Geen Canon-entry gevonden voor deze claim. De claim valt buiten het huidige kennisdomein van Jengo. Label: [HYPOTHESIS] — primaire bron vereist voor opname in Canon.',
+    };
+  }
+
+  // Weighted confidence
+  let weightedConf = 0, totalWeight = 0;
+  for (const m of matches.slice(0, 4)) {
+    weightedConf += m.confidence * m.relevance;
+    totalWeight  += m.relevance;
+  }
+  const conf = totalWeight > 0 ? weightedConf / totalWeight : 0.5;
+
+  let verdict;
+  if (conf >= 0.85) verdict = 'VERIFIED';
+  else if (conf >= 0.70) verdict = 'PROBABLE';
+  else verdict = 'HYPOTHESIS';
+
+  // Pick best synthesis text
+  const best = matches[0];
+  const synthText = best.synthesis + (matches.length > 1
+    ? ` Aanvullend ondersteund door: ${matches.slice(1, 3).map(m => m.id).join(', ')}.`
+    : '');
+
+  return { verdict, confidence: conf, matches: matches.slice(0, 4), synthesis: synthText };
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function runPipeline() {
+  const text = document.getElementById('claim').value.trim();
+  if (!text) return;
+
+  // Animate through stages
+  renderSOL(text);
+  setTimeout(() => renderFLaag(text), 300);
+}
+
+function renderSOL(text) {
+  const dot  = document.getElementById('dot-sol');
+  const card = document.getElementById('card-sol');
+  const conn = document.getElementById('conn-sol');
+
+  dot.className = 'stage-dot pass';
+  dot.textContent = '✓';
+  card.className = 'stage-card';
+  conn.className = 'stage-connector active';
+
+  const words = text.split(/\s+/).length;
+  const tokens = Math.round(words * 1.3);
+  card.innerHTML = `
+    <div class="verdict-row">
+      <span style="font-size:0.78rem;color:#888;">Input ontvangen</span>
+    </div>
+    <div class="detail-row">
+      <span>Woorden:</span> ${words} &nbsp;·&nbsp;
+      <span>Tokens (est.):</span> ${tokens} &nbsp;·&nbsp;
+      <span>Doorgestuurd naar F-laag</span>
+    </div>
+  `;
+
+  setTimeout(() => renderFLaag(text), 400);
+}
+
+function renderFLaag(text) {
+  const f    = fLaag(text);
+  const dot  = document.getElementById('dot-f');
+  const card = document.getElementById('card-f');
+  const conn = document.getElementById('conn-f');
+
+  dot.className = 'stage-dot ' + f.verdict.toLowerCase();
+  dot.textContent = f.verdict === 'BLOCK' ? '✗' : f.verdict === 'WARN' ? '!' : '✓';
+  card.className = 'stage-card';
+
+  const badgeClass = 'badge-' + f.verdict;
+  const triggerHTML = f.blHits.length
+    ? '<div class="triggers-list">' + f.blHits.slice(0,4).map(h =>
+        `<span class="trigger-tag">${h.id} · ${h.patroon}</span>`
+      ).join('') + '</div>'
+    : '';
+
+  card.innerHTML = `
+    <div class="verdict-row">
+      <span class="verdict-badge ${badgeClass}">${f.verdict}</span>
+      <span class="score-num" style="color:${f.verdict==='BLOCK'?'#ff4444':f.verdict==='WARN'?'#ffcc00':'#44dd44'}">${(f.total*100).toFixed(0)}%</span>
+      <span style="font-size:0.72rem;color:#555;">overbodigheidsscore</span>
+    </div>
+    <div class="detail-row">
+      <span>Blacklist match:</span> ${(f.blScore*100).toFixed(0)}% (×0.55) &nbsp;·&nbsp;
+      <span>Canon overlap:</span> ${(f.ccScore*100).toFixed(0)}% (×0.25)
+    </div>
+    ${triggerHTML}
+    <div class="confidence-bar-wrap" style="margin-top:10px;">
+      <div class="confidence-bar" style="width:${f.total*100}%;background:${f.verdict==='BLOCK'?'#ff4444':f.verdict==='WARN'?'#ffcc00':'#44dd44'};"></div>
+    </div>
+    ${f.verdict === 'BLOCK'
+      ? '<div class="detail-row" style="margin-top:8px;color:#cc5555;">F-laag blokkeert. Budget vrijgemaakt voor Q-laag. Pipeline stopt hier.</div>'
+      : '<div class="detail-row" style="margin-top:8px;color:#556655;">Passeert naar B·M Canon-lookup →</div>'
+    }
+  `;
+
+  if (f.verdict === 'BLOCK') {
+    conn.className = 'stage-connector blocked';
+    document.getElementById('dot-bm').className = 'stage-dot';
+    document.getElementById('card-bm').className = 'stage-card idle';
+    document.getElementById('card-bm').innerHTML = '<div class="empty-msg">Geblokkeerd door F-laag — Canon niet bevraagd</div>';
+    document.getElementById('dot-q').className = 'stage-dot';
+    document.getElementById('card-q').className = 'stage-card idle';
+    document.getElementById('card-q').innerHTML = '<div class="empty-msg">Geblokkeerd door F-laag</div>';
+
+    // Q-laag geeft toch een verdict: BLOCK = de claim weerlegt Canon
+    setTimeout(() => renderQBlocked(text, f), 400);
+  } else {
+    conn.className = 'stage-connector active';
+    setTimeout(() => renderBM(text, f), 400);
+  }
+}
+
+function renderBM(text, fResult) {
+  const q    = qLaag(text, fResult);
+  const dot  = document.getElementById('dot-bm');
+  const card = document.getElementById('card-bm');
+  const conn = document.getElementById('conn-bm');
+
+  dot.className = 'stage-dot pass';
+  dot.textContent = q.matches.length > 0 ? q.matches.length : '?';
+  conn.className = 'stage-connector active';
+  card.className = 'stage-card';
+
+  const refsHTML = q.matches.length
+    ? '<div class="canon-refs">' + q.matches.map(m => {
+        const pct = Math.round(m.confidence * 100);
+        const col = pct >= 90 ? '#50c080' : pct >= 80 ? '#c0b040' : '#c07040';
+        return `<div class="canon-ref-card">
+          <span class="canon-ref-id">${m.id}</span>
+          <span class="canon-ref-name">${m.naam}</span>
+          <span class="canon-ref-conf" style="color:${col}">${pct}%</span>
+        </div>`;
+      }).join('') + '</div>'
+    : '<div class="detail-row" style="margin-top:8px;">Geen Canon-entries gevonden — claim buiten kennisdomein</div>';
+
+  card.innerHTML = `
+    <div class="detail-row"><span>${q.matches.length}</span> Canon-${q.matches.length === 1 ? 'entry' : 'entries'} gevonden · gewogen confidence berekend</div>
+    ${refsHTML}
+  `;
+
+  setTimeout(() => renderQ(text, fResult, q), 500);
+}
+
+function renderQ(text, fResult, q) {
+  const dot  = document.getElementById('dot-q');
+  const card = document.getElementById('card-q');
+
+  const badgeClass = 'badge-' + q.verdict;
+  const pct = Math.round(q.confidence * 100);
+  const barColor = q.verdict === 'VERIFIED' ? '#44aaff' : q.verdict === 'PROBABLE' ? '#aacc44' : '#9988cc';
+  const synthClass = q.verdict === 'HYPOTHESIS' ? 'hypothesis' : '';
+
+  dot.className = 'stage-dot pass';
+  dot.textContent = 'Q';
+  card.className = 'stage-card';
+
+  card.innerHTML = `
+    <div class="verdict-row">
+      <span class="verdict-badge ${badgeClass}">${q.verdict}</span>
+      <span class="score-num" style="color:${barColor}">${pct}%</span>
+      <span style="font-size:0.72rem;color:#555;">gewogen Canon-confidence</span>
+    </div>
+    <div class="confidence-bar-wrap">
+      <div class="confidence-bar" style="width:${pct}%;background:${barColor};"></div>
+    </div>
+    <div class="synthesis-text ${synthClass}">${q.synthesis}</div>
+    <div class="detail-row" style="margin-top:8px;">
+      <span>Ondersteund door:</span> ${q.matches.map(m => m.id).join(', ') || 'geen Canon-entry'}
+    </div>
+  `;
+
+  showOuroborosCmd(text, q.verdict);
+}
+
+function renderQBlocked(text, fResult) {
+  const dot  = document.getElementById('dot-q');
+  const card = document.getElementById('card-q');
+
+  // F-BLOCK = claim weerlegt Canon
+  const hitCanon = BLACKLIST.filter(b => fResult.blHits.find(h => h.id === b.id));
+  const canonRefs = [...new Set(hitCanon.map(h => h.canon_ref))];
+
+  dot.className = 'stage-dot block';
+  dot.textContent = '✗';
+  card.className = 'stage-card';
+
+  card.innerHTML = `
+    <div class="verdict-row">
+      <span class="verdict-badge badge-BLOCK">WEERSPROKEN</span>
+    </div>
+    <div class="synthesis-text blocked">
+      Deze claim weerlegt ${canonRefs.length > 0 ? canonRefs.join(' + ') : 'een VERIFIED Canon-entry'}.
+      De F-laag heeft de claim geblokkeerd vóór verwerking — dit is energiebesparend én architectureel correct.
+      Om deze claim te weerleggen is een sterkere primaire bron vereist dan de huidige Canon.
+    </div>
+    <div class="detail-row" style="margin-top:8px;"><span>Geblokkeerd door:</span> ${fResult.blHits.map(h => h.id).join(', ')}</div>
+  `;
+
+  showOuroborosCmd(text, 'BLOCK');
+}
+
+function showOuroborosCmd(text, verdict) {
+  const wrap = document.getElementById('ouroboros-cmd-wrap');
+  const cmd  = document.getElementById('ouroboros-cmd');
+  const psVerdict = verdict === 'BLOCK' ? 'CONTRADICTED' : (verdict === 'VERIFIED' || verdict === 'PROBABLE') ? 'CONFIRMED' : null;
+  if (!psVerdict) { wrap.style.display = 'none'; return; }
+  const escaped = text.replace(/'/g, "''");
+  cmd.textContent = `powershell -File C:\\scripts\\tools\\jengo-ouroboros-update.ps1 -Claim '${escaped}' -Verdict ${psVerdict}`;
+  wrap.style.display = 'block';
+}
+
+function setClaim(el) {
+  document.getElementById('claim').value = el.textContent.trim();
+}
+
+function copyCmd() {
+  const cmd = document.getElementById('ouroboros-cmd').textContent.trim();
+  navigator.clipboard.writeText(cmd).then(() => {
+    event.target.textContent = 'Gekopieerd ✓';
+    setTimeout(() => event.target.textContent = 'Kopieer', 1500);
+  });
+}
+</script>
+</body>
+</html>
