@@ -464,4 +464,4 @@ Share your learning architectures and memory patterns.
 
 **Version:** 1.0.0
 **Status:** ACTIVE - Open-source learning patterns
-**License:** MIT (when published) - currently PRIVATE during development
+**License:** MIT
